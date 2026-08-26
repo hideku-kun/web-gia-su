@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace - Giáo Viên</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F9FAFB;
+            --surface: #FFFFFF;
+            --text-main: #111827;
+            --text-sub: #6B7280;
+            --border: #E5E7EB;
+            --danger: #EF4444;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 30px 20px; line-height: 1.5; }
+        .container { max-width: 1000px; margin: auto; }
+        
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        h2 { margin: 0; font-size: 24px; font-weight: 700; color: var(--primary); }
+        
+        .card { background: var(--surface); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); margin-bottom: 20px;}
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
+        .tabs button { padding: 10px 20px; font-size: 15px; font-weight: 600; color: var(--text-sub); background: transparent; border: none; cursor: pointer; transition: all 0.2s; border-radius: 6px; }
+        .tabs button:hover { background: #F3F4F6; color: var(--text-main); }
+        .tabs button.active-btn { background: var(--primary); color: white; }
+        
+        .section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .input-group { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;}
+        input, select, textarea { flex: 1; min-width: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+        textarea { min-height: 120px; resize: vertical; width: 100%; }
+        
+        button.btn-main { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        button.btn-main:hover { background: var(--primary-hover); }
+        
+        button.btn-export { background: #10B981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-left: auto; display: block;}
+        button.btn-export:hover { background: #059669; }
+
+        button.btn-delete { background: white; color: var(--danger); border: 1px solid var(--danger); padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        button.btn-delete:hover { background: #FEF2F2; }
+        
+        .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background: #F9FAFB; font-weight: 600; color: var(--text-sub); }
+        
+        .btn-ai { background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>👨‍🏫 Bảng Điều Khiển Giáo Viên</h2>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="active-btn" onclick="showTab('diemdanh', this)">Điểm danh & Báo cáo</button>
+                <button onclick="showTab('tiendo', this)">Tiến độ Học sinh</button>
+                <button onclick="showTab('kiemtra', this)">Quản lý Đề</button>
+            </div>
+
+            <!-- Tab Điểm danh -->
+            <div id="diemdanh" class="section active">
+                <div class="input-group">
+                    <input type="date" id="ngayHoc">
+                    <select id="trangThai">
+                        <option value="Có mặt">Có mặt</option>
+                        <option value="Đi trễ">Đi trễ</option>
+                        <option value="Vắng mặt">Vắng mặt</option>
+                    </select>
+                    <input type="text" id="nhanXet" placeholder="Nhận xét (VD: Tiếp thu từ vựng tốt, phát âm còn yếu...)">
+                    <button class="btn-main" style="flex: unset;" onclick="themDiemDanh()">Lưu</button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="bangDiemDanh">
+                        <!-- Dữ liệu điểm danh hiển thị ở đây -->
+                    </table>
+                </div>
+                
+                <br>
+                <button class="btn-export" onclick="xuatWord()">📥 Xuất file Word cho Phụ Huynh</button>
+            </div>
+
+            <!-- Tab Tiến độ -->
+            <div id="tiendo" class="section">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tên Đề</th>
+                                <th>Ngày nộp</th>
+                                <th>Đáp án của học sinh</th>
+                                <th>Chấm bằng AI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bangTienDo"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Giao đề & Quản lý đề -->
+            <div id="kiemtra" class="section">
+                <h3>Phát hành đề mới</h3>
+                <div class="input-group">
+                    <input type="text" id="tenDe" placeholder="Nhập tên đề kiểm tra..." style="flex: 3;">
+                    <input type="number" id="soLuongCau" placeholder="Số câu" style="flex: 1;" min="1">
+                </div>
+                <textarea id="noiDungDe" placeholder="Copy và dán toàn bộ nội dung đề từ file Word vào đây..." style="margin-bottom: 15px;"></textarea>
+                <button class="btn-main" onclick="themDeKiemTra()">Phát Hành Đề Ngay</button>
+
+                <h3 style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border);">Kho đề đã giao</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tên Đề</th>
+                                <th>Số câu</th>
+                                <th>Ngày tạo</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bangDanhSachDe"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHAI BÁO FIREBASE (Thêm module doc và deleteDoc) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        // Thêm doc và deleteDoc vào danh sách import
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2NWucutuC443gUpIl2IonrFjTuHaCZ2c",
+            authDomain: "lop-hoc-tieng-anh.firebaseapp.com",
+            projectId: "lop-hoc-tieng-anh"
+        };
+        const db = getFirestore(initializeApp(firebaseConfig));
+
+        // Chuyển Tab
+        window.showTab = (id, btn) => {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active-btn'));
+            btn.classList.add('active-btn');
+        };
+
+        // ==========================
+        // 1. TÍNH NĂNG ĐIỂM DANH
+        // ==========================
+        window.themDiemDanh = async () => {
+            const ngay = document.getElementById('ngayHoc').value;
+            const trangThai = document.getElementById('trangThai').value;
+            const nhanXet = document.getElementById('nhanXet').value;
+            if(!ngay) return alert("Vui lòng chọn ngày học!");
+            
+            await addDoc(collection(db, "diemdanh"), { ngay, trangThai, nhanXet, thoiGianTao: Date.now() });
+            document.getElementById('nhanXet').value = '';
+        };
+
+        // Lắng nghe dữ liệu điểm danh
+        onSnapshot(query(collection(db, "diemdanh"), orderBy("ngay", "desc")), (snapshot) => {
+            const table = document.getElementById('bangDiemDanh');
+            table.innerHTML = '<tr><th>Ngày học</th><th>Trạng thái</th><th>Nhận xét của giáo viên</th></tr>';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                table.innerHTML += `
+                    <tr>
+                        <td><strong>${new Date(data.ngay).toLocaleDateString('vi-VN')}</strong></td>
+                        <td>${data.trangThai}</td>
+                        <td>${data.nhanXet}</td>
+                    </tr>`;
+            });
+        });
+
+        // Hàm xuất file Word (.doc)
+        window.xuatWord = () => {
+            // Lấy nội dung HTML của bảng điểm danh
+            const bangHTML = document.getElementById('bangDiemDanh').innerHTML;
+            
+            // Xây dựng cấu trúc file Word cơ bản
+            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Báo cáo</title></head><body>";
+            const footer = "</body></html>";
+            
+            // Tiêu đề của file Word
+            const title = "<h2 style='text-align:center;'>BÁO CÁO TÌNH HÌNH HỌC TẬP THÁNG</h2><p><strong>Môn học:</strong> Tiếng Anh Giao tiếp & Chương trình THPT</p><br>";
+            
+            // Ép bảng hiển thị viền (border) khi mở bằng MS Word
+            const tableChuan = `<table border="1" style="border-collapse: collapse; width: 100%; text-align: left;">${bangHTML}</table>`;
+            
+            const htmlGop = header + title + tableChuan + footer;
+            
+            // Tạo đối tượng Blob đóng gói định dạng Word
+            const blob = new Blob(['\ufeff', htmlGop], { type: 'application/msword' });
+            
+            // Tạo link ảo để tải file
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Bao_Cao_Hoc_Tap.doc'; // Tên file tải về
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // ==========================
+        // 2. TÍNH NĂNG QUẢN LÝ ĐỀ
+        // ==========================
+        window.themDeKiemTra = async () => {
+            const ten = document.getElementById('tenDe').value;
+            const soCau = document.getElementById('soLuongCau').value;
+            const noiDung = document.getElementById('noiDungDe').value;
+            if(!ten || !soCau) return alert("Vui lòng nhập đủ tên đề và số lượng câu!");
+            
+            await addDoc(collection(db, "danhsach_de"), { tenDe: ten, soLuongCau: parseInt(soCau), noiDungDe: noiDung, thoiGianTao: Date.now() });
+            alert("Đã phát hành đề thành công!");
+            document.getElementById('tenDe').value = ''; document.getElementById('soLuongCau').value = ''; document.getElementById('noiDungDe').value = '';
+        };
+
+        // Lắng nghe danh sách đề để hiển thị ra bảng Quản lý đề
+        onSnapshot(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")), (snapshot) => {
+            const tbody = document.getElementById('bangDanhSachDe');
+            tbody.innerHTML = '';
+            snapshot.forEach(docDb => {
+                const data = docDb.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${data.tenDe}</strong></td>
+                        <td>${data.soLuongCau}</td>
+                        <td style="color: #6B7280;">${new Date(data.thoiGianTao).toLocaleDateString('vi-VN')}</td>
+                        <td>
+                            <button class="btn-delete" onclick="xoaDe('${docDb.id}')">Xóa đề</button>
+                        </td>
+                    </tr>`;
+            });
+        });
+
+        // Hàm xóa đề
+        window.xoaDe = async (idDe) => {
+            if(confirm("Bạn có chắc chắn muốn xóa đề này? Học sinh sẽ không thể thấy đề này nữa.")) {
+                try {
+                    await deleteDoc(doc(db, "danhsach_de", idDe));
+                } catch (error) {
+                    console.error("Lỗi khi xóa: ", error);
+                }
+            }
+        };
+
+        // ==========================
+        // 3. TÍNH NĂNG TIẾN ĐỘ
+        // ==========================
+        onSnapshot(query(collection(db, "ketqua_hocsinh"), orderBy("thoiGianNop", "desc")), (snapshot) => {
+            const tbody = document.getElementById('bangTienDo');
+            tbody.innerHTML = '';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const chuoiDapAn = Object.entries(data.dapAn).map(([cau, chon]) => `${cau}:${chon}`).join(', ');
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${data.tenDe}</strong></td>
+                        <td style="color: #6B7280;">${new Date(data.thoiGianNop).toLocaleString('vi-VN')}</td>
+                        <td style="max-width: 250px; line-height: 1.6;">${chuoiDapAn}</td>
+                        <td>
+                            <button class="btn-ai" onclick="xuatChoGemini('${data.tenDe}', '${chuoiDapAn}')">Tạo Prompt AI</button>
+                        </td>
+                    </tr>`;
+            });
+        });
+
+        window.xuatChoGemini = (tenDe, chuoiDapAn) => {
+            const prompt = `Đóng vai là giáo viên tiếng Anh. Đề bài là: [${tenDe}]. Học sinh của tôi đã chọn các đáp án sau: ${chuoiDapAn}. Hãy chấm điểm, chỉ ra các câu sai và giải thích ngắn gọn lý do sai để tôi hướng dẫn lại cho học sinh.`;
+            navigator.clipboard.writeText(prompt);
+            alert("Đã copy câu lệnh! Hãy dán vào khung chat với Gemini.");
+        };
+    </script>
+</body>
+</html>

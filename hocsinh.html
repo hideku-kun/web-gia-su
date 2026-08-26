@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Học Tập</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --primary-hover: #2563EB;
+            --bg: #EFF6FF;
+            --surface: #FFFFFF;
+            --text-main: #1E293B;
+            --text-sub: #64748B;
+            --border: #E2E8F0;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
+        .container { max-width: 1200px; margin: auto; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 20px 30px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { margin: 0; color: var(--primary); font-size: 22px; }
+        
+        select { padding: 12px 20px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-size: 15px; outline: none; font-weight: 500; min-width: 300px; cursor: pointer; }
+        select:focus { border-color: var(--primary); }
+
+        .layout { display: flex; gap: 20px; height: calc(100vh - 140px); }
+        
+        /* Cột bên trái: Nội dung đề */
+        .de-bai-khung { flex: 2; background: var(--surface); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        .khung-title { padding: 15px 25px; border-bottom: 1px solid var(--border); background: #F8FAFC; font-weight: 600; color: var(--text-sub); }
+        .de-bai { padding: 25px; overflow-y: auto; white-space: pre-wrap; font-size: 16px; line-height: 1.8; color: #334155; }
+        
+        /* Cột bên phải: Phiếu trả lời */
+        .phieu-tra-loi { flex: 1; background: var(--surface); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        .danh-sach-chon { padding: 25px; overflow-y: auto; flex-grow: 1; }
+        
+        /* Custom UI cho nút trắc nghiệm */
+        .cau-hoi { margin-bottom: 20px; }
+        .cau-hoi-title { font-weight: 600; margin-bottom: 10px; display: block; color: var(--text-main); }
+        .options-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        
+        .radio-label { display: flex; justify-content: center; align-items: center; padding: 10px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+        .radio-label:hover { background: #F1F5F9; }
+        .radio-label input { display: none; } /* Ẩn nút radio mặc định đi */
+        .radio-label input:checked + span { color: var(--primary); }
+        .radio-label:has(input:checked) { border-color: var(--primary); background: #EFF6FF; }
+
+        .khu-vuc-nop { padding: 20px 25px; border-top: 1px solid var(--border); background: #F8FAFC; }
+        .btn-nop { background: var(--primary); color: white; border: none; width: 100%; padding: 14px; font-weight: 700; font-size: 16px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+        .btn-nop:hover { background: var(--primary-hover); }
+
+        @media (max-width: 768px) {
+            .layout { flex-direction: column; height: auto; }
+            .de-bai { height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <h2>🎓 Không gian làm bài</h2>
+            <select id="chonDe" onchange="taiDeBai()">
+                <option value="">-- Lựa chọn bài tập để bắt đầu --</option>
+            </select>
+        </div>
+
+        <div id="khuVucLamBai" class="layout" style="display: none;">
+            <div class="de-bai-khung">
+                <div class="khung-title">📄 Nội dung đề bài</div>
+                <div id="hienThiDe" class="de-bai"></div>
+            </div>
+            
+            <div class="phieu-tra-loi">
+                <div class="khung-title" style="color: var(--primary);">✍️ Phiếu trả lời</div>
+                <div id="danhSachChon" class="danh-sach-chon"></div>
+                <div class="khu-vuc-nop">
+                    <button class="btn-nop" onclick="nopBai()">NỘP BÀI</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CODE FIREBASE GIỮ NGUYÊN -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyC2NWucutuC443gUpIl2IonrFjTuHaCZ2c", authDomain: "lop-hoc-tieng-anh.firebaseapp.com", projectId: "lop-hoc-tieng-anh" };
+        const db = getFirestore(initializeApp(firebaseConfig));
+        let deHienTai = null;
+
+        async function loadDanhSachDe() {
+            const q = query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc"));
+            const snap = await getDocs(q);
+            const select = document.getElementById('chonDe');
+            snap.forEach(doc => {
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.text = doc.data().tenDe;
+                opt.dataset.noiDung = doc.data().noiDungDe;
+                opt.dataset.soCau = doc.data().soLuongCau;
+                select.add(opt);
+            });
+        }
+        loadDanhSachDe();
+
+        window.taiDeBai = () => {
+            const select = document.getElementById('chonDe');
+            if(!select.value) return document.getElementById('khuVucLamBai').style.display = 'none';
+            
+            const opt = select.options[select.selectedIndex];
+            deHienTai = { id: opt.value, ten: opt.text, soCau: opt.dataset.soCau };
+            
+            document.getElementById('hienThiDe').textContent = opt.dataset.noiDung;
+            document.getElementById('khuVucLamBai').style.display = 'flex';
+            
+            const bangChon = document.getElementById('danhSachChon');
+            bangChon.innerHTML = '';
+            for(let i = 1; i <= deHienTai.soCau; i++) {
+                bangChon.innerHTML += `
+                    <div class="cau-hoi">
+                        <span class="cau-hoi-title">Câu ${i}</span>
+                        <div class="options-grid">
+                            <label class="radio-label"><input type="radio" name="cau${i}" value="A"><span>A</span></label>
+                            <label class="radio-label"><input type="radio" name="cau${i}" value="B"><span>B</span></label>
+                            <label class="radio-label"><input type="radio" name="cau${i}" value="C"><span>C</span></label>
+                            <label class="radio-label"><input type="radio" name="cau${i}" value="D"><span>D</span></label>
+                        </div>
+                    </div>`;
+            }
+        };
+
+        window.nopBai = async () => {
+            if(!confirm("Kiểm tra kỹ lại nhé, bạn chắc chắn muốn nộp bài?")) return;
+            
+            let dapAnHocSinh = {};
+            for(let i = 1; i <= deHienTai.soCau; i++) {
+                const chon = document.querySelector(`input[name="cau${i}"]:checked`);
+                dapAnHocSinh[i] = chon ? chon.value : "Chưa làm";
+            }
+
+            await addDoc(collection(db, "ketqua_hocsinh"), {
+                idDe: deHienTai.id,
+                tenDe: deHienTai.ten,
+                dapAn: dapAnHocSinh,
+                thoiGianNop: Date.now()
+            });
+
+            alert("Nộp bài thành công!");
+            document.getElementById('khuVucLamBai').style.display = 'none';
+            document.getElementById('chonDe').value = "";
+        };
+    </script>
+</body>
+</html>
