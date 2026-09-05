@@ -14,6 +14,7 @@
         .card { background: var(--surface); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); margin-bottom: 20px;}
         .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 15px; flex-wrap: wrap; }
         .tabs button { padding: 10px 20px; font-size: 15px; font-weight: 600; color: var(--text-sub); background: transparent; border: none; cursor: pointer; transition: all 0.2s; border-radius: 6px; }
+        .tabs button:hover { background: #F3F4F6; color: var(--text-main); }
         .tabs button.active-btn { background: var(--primary); color: white; }
         .section { display: none; animation: fadeIn 0.3s; }
         .section.active { display: block; }
@@ -43,7 +44,6 @@
                 <button onclick="showTab('tuvung', this)">Kho Từ Vựng</button>
             </div>
 
-            <!-- CÁC TAB CŨ (Điểm danh, Tiến độ, Quản lý đề) GIỮ NGUYÊN HOÀN TOÀN -->
             <div id="diemdanh" class="section active">
                 <div class="input-group">
                     <input type="date" id="ngayHoc"><select id="trangThai"><option>Có mặt</option><option>Đi trễ</option><option>Vắng mặt</option></select>
@@ -62,22 +62,26 @@
             <div id="kiemtra" class="section">
                 <h3>Phát hành đề mới</h3>
                 <div class="input-group">
-                    <input type="text" id="tenDe" placeholder="Tên đề..." style="flex: 3;"><input type="number" id="soLuongCau" placeholder="Số câu" style="flex: 1;">
+                    <input type="text" id="tenDe" placeholder="Tên đề..." style="flex: 2;">
+                    <select id="loaiDe" style="flex: 1;">
+                        <option value="tracnghiem">Trắc nghiệm (A,B,C,D)</option>
+                        <option value="dientu">Điền từ / Tự luận</option>
+                    </select>
+                    <input type="number" id="soLuongCau" placeholder="Số câu" style="flex: 1;">
                 </div>
                 <textarea id="noiDungDe" placeholder="Nội dung đề..."></textarea>
                 <button class="btn-main" style="margin-top: 15px;" onclick="themDeKiemTra()">Phát Hành Đề Ngay</button>
                 <h3 style="margin-top: 40px;">Kho đề đã giao</h3>
                 <div style="overflow-x: auto;">
-                    <table><thead><tr><th>Tên Đề</th><th>Số câu</th><th>Ngày tạo</th><th>Hành động</th></tr></thead><tbody id="bangDanhSachDe"></tbody></table>
+                    <table><thead><tr><th>Tên Đề</th><th>Loại</th><th>Số câu</th><th>Ngày tạo</th><th>Hành động</th></tr></thead><tbody id="bangDanhSachDe"></tbody></table>
                 </div>
             </div>
 
-            <!-- TAB TỪ VỰNG MỚI (Hỗ trợ 2 cú pháp) -->
             <div id="tuvung" class="section">
                 <div class="input-group">
                     <input type="text" id="tenBoTu" placeholder="Tên bộ thẻ (VD: Unit 1)">
                 </div>
-                <textarea id="nhapNhanh" placeholder="-- HƯỚNG DẪN ĐIỀN NHANH --&#10;Cách 1 (Tự nhập đủ thông tin bằng dấu | ):&#10;Apple | /ˈæpl/ | Noun | Quả táo&#10;Run | /rʌn/ | Verb | Chạy&#10;&#10;Cách 2 (Hệ thống tự tìm phiên âm bằng dấu = ):&#10;Fish = Con cá" style="min-height: 200px;"></textarea>
+                <textarea id="nhapNhanh" placeholder="-- HƯỚNG DẪN ĐIỀN NHANH --&#10;Cách 1: Apple | /ˈæpl/ | Noun | Quả táo&#10;Cách 2: Fish = Con cá" style="min-height: 200px;"></textarea>
                 <button class="btn-main" style="margin-top: 15px;" onclick="themTuNhanh()" id="btnTaoThe">⚡ Tạo bộ thẻ</button>
                 
                 <div style="overflow-x: auto; margin-top: 20px;">
@@ -90,7 +94,6 @@
         </div>
     </div>
 
-    <!-- KHAI BÁO FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -104,83 +107,50 @@
             btn.classList.add('active-btn');
         };
 
-        // --- CÁC HÀM CŨ (GIỮ NGUYÊN 100%) ---
         window.themDiemDanh = async () => { const ngay = document.getElementById('ngayHoc').value, trangThai = document.getElementById('trangThai').value, nhanXet = document.getElementById('nhanXet').value; if(ngay) { await addDoc(collection(db, "diemdanh"), { ngay, trangThai, nhanXet, thoiGianTao: Date.now() }); document.getElementById('nhanXet').value = ''; } };
         onSnapshot(query(collection(db, "diemdanh"), orderBy("ngay", "desc")), (s) => { const t = document.getElementById('bangDiemDanh'); t.innerHTML = '<tr><th>Ngày học</th><th>Trạng thái</th><th>Nhận xét</th></tr>'; s.forEach(d => t.innerHTML += `<tr><td>${new Date(d.data().ngay).toLocaleDateString()}</td><td>${d.data().trangThai}</td><td>${d.data().nhanXet}</td></tr>`); });
         window.xuatWord = () => { const b = document.getElementById('bangDiemDanh').innerHTML, l = document.createElement('a'); l.href = URL.createObjectURL(new Blob(['\ufeff<html xmlns:w="urn:schemas-microsoft-com:office:word"><body><h2 align="center">BÁO CÁO</h2><table border="1" style="border-collapse:collapse;width:100%">' + b + '</table></body></html>'], {type:'application/msword'})); l.download='Bao_Cao.doc'; l.click(); };
-        window.themDeKiemTra = async () => { const t = document.getElementById('tenDe').value, s = document.getElementById('soLuongCau').value, n = document.getElementById('noiDungDe').value; if(t&&s) { await addDoc(collection(db, "danhsach_de"), { tenDe: t, soLuongCau: parseInt(s), noiDungDe: n, thoiGianTao: Date.now() }); document.getElementById('tenDe').value = ''; document.getElementById('soLuongCau').value = ''; document.getElementById('noiDungDe').value = ''; alert("Đã phát hành!");} };
-        onSnapshot(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")), (s) => { const t = document.getElementById('bangDanhSachDe'); t.innerHTML = ''; s.forEach(d => t.innerHTML += `<tr><td><strong>${d.data().tenDe}</strong></td><td>${d.data().soLuongCau}</td><td>${new Date(d.data().thoiGianTao).toLocaleDateString()}</td><td><button class="btn-delete" onclick="xoaDe('${d.id}')">Xóa</button></td></tr>`); });
+        
+        window.themDeKiemTra = async () => { 
+            const t = document.getElementById('tenDe').value, s = document.getElementById('soLuongCau').value, n = document.getElementById('noiDungDe').value, l = document.getElementById('loaiDe').value; 
+            if(t&&s) { await addDoc(collection(db, "danhsach_de"), { tenDe: t, soLuongCau: parseInt(s), noiDungDe: n, loaiDe: l, thoiGianTao: Date.now() }); document.getElementById('tenDe').value = ''; document.getElementById('soLuongCau').value = ''; document.getElementById('noiDungDe').value = ''; alert("Đã phát hành!");} 
+        };
+        
+        onSnapshot(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")), (s) => { 
+            const t = document.getElementById('bangDanhSachDe'); t.innerHTML = ''; 
+            s.forEach(d => {
+                const loai = d.data().loaiDe === 'dientu' ? 'Điền từ' : 'Trắc nghiệm';
+                t.innerHTML += `<tr><td><strong>${d.data().tenDe}</strong></td><td>${loai}</td><td>${d.data().soLuongCau}</td><td>${new Date(d.data().thoiGianTao).toLocaleDateString()}</td><td><button class="btn-delete" onclick="xoaDe('${d.id}')">Xóa</button></td></tr>`; 
+            }); 
+        });
+        
         window.xoaDe = async (id) => { if(confirm("Xóa đề này?")) await deleteDoc(doc(db, "danhsach_de", id)); };
+        
         onSnapshot(query(collection(db, "ketqua_hocsinh"), orderBy("thoiGianNop", "desc")), (s) => { const t = document.getElementById('bangTienDo'); t.innerHTML = ''; s.forEach(d => { const dt = d.data(), c = Object.entries(dt.dapAn).map(([x, y]) => `${x}:${y}`).join(', '); t.innerHTML += `<tr><td><strong>${dt.tenDe}</strong></td><td>${new Date(dt.thoiGianNop).toLocaleString()}</td><td>${c}</td><td><button class="btn-ai" onclick="xuatChoGemini('${dt.tenDe}', '${c}')">Prompt AI</button></td></tr>`; }); });
         window.xuatChoGemini = (t, c) => { navigator.clipboard.writeText(`Đóng vai giáo viên tiếng Anh. Đề: [${t}]. Học sinh chọn: ${c}. Hãy chấm và giải thích.`); alert("Đã copy lệnh!"); };
 
-        // --- HÀM TỪ VỰNG MỚI NÂNG CẤP ---
         window.themTuNhanh = async () => {
             const tenBo = document.getElementById('tenBoTu').value.trim();
             const rawText = document.getElementById('nhapNhanh').value.trim();
             if(!tenBo || !rawText) return alert("Vui lòng nhập tên bộ và danh sách từ!");
-            
-            const btn = document.getElementById('btnTaoThe');
-            btn.textContent = "Đang xử lý..."; btn.disabled = true;
-
+            const btn = document.getElementById('btnTaoThe'); btn.textContent = "Đang xử lý..."; btn.disabled = true;
             const lines = rawText.split('\n');
             for(let line of lines) {
                 if(!line.trim()) continue;
-                
                 let tuAnh = "", phienAm = "", loaiTu = "", nghiaViet = "";
-                
-                // Phân tích cú pháp đầy đủ (Dùng dấu |)
-                if(line.includes('|')) {
-                    let parts = line.split('|').map(s => s.trim());
-                    tuAnh = parts[0] || "";
-                    phienAm = parts[1] || "";
-                    loaiTu = parts[2] || "";
-                    nghiaViet = parts[3] || "";
-                } 
-                // Phân tích cú pháp ngắn gọn, tự động dịch (Dùng dấu =)
-                else if(line.includes('=')) {
-                    let parts = line.split('=').map(s => s.trim());
-                    tuAnh = parts[0] || "";
-                    nghiaViet = parts[1] || "";
-                    try {
-                        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${tuAnh}`);
-                        if(res.ok) {
-                            const data = await res.json();
-                            phienAm = data[0]?.phonetic || "";
-                            if(!phienAm && data[0]?.phonetics) {
-                                const p = data[0].phonetics.find(x => x.text);
-                                if(p) phienAm = p.text;
-                            }
-                            loaiTu = data[0]?.meanings[0]?.partOfSpeech || "";
-                        }
-                    } catch(e) { console.log("Không tự tìm được thông tin cho từ: " + tuAnh); }
-                } else {
-                    continue; // Bỏ qua nếu dòng không chứa | hoặc =
-                }
-
-                if(tuAnh && nghiaViet) {
-                    await addDoc(collection(db, "tu_vung"), { tenBo, tuAnh, phienAm, loaiTu, nghiaViet, thoiGianTao: Date.now() });
-                }
+                if(line.includes('|')) { let parts = line.split('|').map(s => s.trim()); tuAnh = parts[0]||""; phienAm = parts[1]||""; loaiTu = parts[2]||""; nghiaViet = parts[3]||""; } 
+                else if(line.includes('=')) { let parts = line.split('=').map(s => s.trim()); tuAnh = parts[0]||""; nghiaViet = parts[1]||"";
+                    try { const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${tuAnh}`); if(res.ok) { const data = await res.json(); phienAm = data[0]?.phonetic || ""; if(!phienAm && data[0]?.phonetics) { const p = data[0].phonetics.find(x => x.text); if(p) phienAm = p.text; } loaiTu = data[0]?.meanings[0]?.partOfSpeech || ""; } } catch(e) {}
+                } else continue;
+                if(tuAnh && nghiaViet) await addDoc(collection(db, "tu_vung"), { tenBo, tuAnh, phienAm, loaiTu, nghiaViet, thoiGianTao: Date.now() });
             }
-            
-            btn.textContent = "⚡ Tạo bộ thẻ"; btn.disabled = false;
-            document.getElementById('nhapNhanh').value = '';
-            alert("Đã tạo xong bộ thẻ!");
+            btn.textContent = "⚡ Tạo bộ thẻ"; btn.disabled = false; document.getElementById('nhapNhanh').value = ''; alert("Đã tạo xong bộ thẻ!");
         };
 
         onSnapshot(query(collection(db, "tu_vung"), orderBy("thoiGianTao", "desc")), (snapshot) => {
             const tbody = document.getElementById('bangTuVung'); tbody.innerHTML = '';
-            snapshot.forEach(d => {
-                const data = d.data();
-                tbody.innerHTML += `<tr>
-                    <td><span style="background:#EFF6FF; color:#3B82F6; padding:4px 8px; border-radius:4px; font-size:12px;">${data.tenBo || 'Chung'}</span></td>
-                    <td><strong>${data.tuAnh}</strong></td>
-                    <td>${data.nghiaViet} <br><small style="color: #6B7280;">${data.phienAm} ${data.loaiTu ? '- ' + data.loaiTu : ''}</small></td>
-                    <td><button class="btn-delete" onclick="xoaTuVung('${d.id}')">Xóa</button></td>
-                </tr>`;
-            });
+            snapshot.forEach(d => { const data = d.data(); tbody.innerHTML += `<tr><td><span style="background:#EFF6FF; color:#3B82F6; padding:4px 8px; border-radius:4px; font-size:12px;">${data.tenBo || 'Chung'}</span></td><td><strong>${data.tuAnh}</strong></td><td>${data.nghiaViet} <br><small style="color: #6B7280;">${data.phienAm} ${data.loaiTu ? '- ' + data.loaiTu : ''}</small></td><td><button class="btn-delete" onclick="xoaTuVung('${d.id}')">Xóa</button></td></tr>`; });
         });
-
         window.xoaTuVung = async (id) => { if(confirm("Xóa từ này khỏi bộ thẻ?")) await deleteDoc(doc(db, "tu_vung", id)); };
     </script>
 </body>
