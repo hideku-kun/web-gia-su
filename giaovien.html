@@ -32,6 +32,25 @@
         .btn-ai { background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
 
 
+
+        .exam-instruction {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            line-height: 1.7;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .exam-instruction-title {
+            display: block;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
         /* ===== Trình soạn & xem trước đề ===== */
         .exam-editor-toolbar {
             display: flex;
@@ -590,6 +609,18 @@
             return parseDeEditor(rawText, loaiDe).length;
         }
 
+        function layDeBaiEditor(rawText) {
+            const lines = (rawText || '').replace(/\r/g, '').split('\n');
+            const intro = [];
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) continue;
+                if (/^(?:(?:Câu|Question)\s*)?\d+\s*(?:[.):\-]\s+)(.*)$/i.test(line)) break;
+                intro.push(line);
+            }
+            return intro.join('\n').trim();
+        }
+
         window.capNhatGoiYNhapDe = () => {
             const loai = document.getElementById('loaiDe').value;
             const hint = document.getElementById('editorHint');
@@ -644,6 +675,15 @@
             badge.textContent = `${questions.length} câu`;
 
             let htmlPreview = '';
+
+            const instructions = layDeBaiEditor(raw);
+            if (instructions) {
+                htmlPreview += `
+                    <div class="exam-instruction">
+                        <span class="exam-instruction-title">📌 Đề bài</span>
+                        ${escapeHtmlEditor(instructions)}
+                    </div>`;
+            }
 
             questions.forEach(q => {
                 htmlPreview += `
@@ -899,10 +939,23 @@
             return questions.slice(0, Number(soCau) || questions.length);
         }
 
+        function layDeBaiGV(rawText) {
+            const lines = (rawText || '').replace(/\r/g, '').split('\n');
+            const intro = [];
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) continue;
+                if (/^(?:(?:Câu|Question)\s*)?\d+\s*(?:[.):\-]\s+)(.*)$/i.test(line)) break;
+                intro.push(line);
+            }
+            return intro.join('\n').trim();
+        }
+
         let modalState = {
             questions: [],
             answers: {},
             current: 0,
+            instructions: '',
             loaiDe: 'tracnghiem',
             tenDe: ''
         };
@@ -911,6 +964,7 @@
             const lines = (rawText || '').replace(/\r/g, '').split('\n');
             const questions = [];
             let current = null;
+            const introLines = [];
 
             const push = () => {
                 if (current && current.text.trim()) {
@@ -938,7 +992,11 @@
                     continue;
                 }
 
-                if (!current) continue;
+                if (!current) {
+                    // Everything before Question 1 / Câu 1 / 1. is the exercise instruction.
+                    introLines.push(line);
+                    continue;
+                }
 
                 if (loaiDe !== 'dientu') {
                     const opt = line.match(/^([ABCD])\s*(?:[.):\-]\s+|\s+)(.*)$/i);
@@ -963,7 +1021,11 @@
             }
 
             push();
-            return questions;
+
+            return {
+                instructions: introLines.join('\n').trim(),
+                questions
+            };
         }
 
         window.moBaiLam = async (submissionId) => {
@@ -997,12 +1059,13 @@
                 // Nếu đề khai báo nhiều câu nhưng parser chỉ nhận 1 câu,
                 // thử parser dòng-question với các dạng đánh số phổ biến.
                 if (Number(deGoc.soLuongCau) > 1 && modalState.questions.length === 1) {
-                    const fallbackQuestions = parseDeTheoDong(noiDungGoc, deGoc.loaiDe || 'tracnghiem');
-                    if (fallbackQuestions.length > modalState.questions.length) {
-                        modalState.questions = fallbackQuestions;
+                    const fallbackResult = parseDeTheoDong(noiDungGoc, deGoc.loaiDe || 'tracnghiem');
+                    if (fallbackResult.questions.length > modalState.questions.length) {
+                        modalState.questions = fallbackResult.questions;
                     }
                 }
                 modalState.answers = ketQua.dapAn || {};
+                modalState.instructions = layDeBaiGV(noiDungGoc);
                 modalState.current = 0;
                 modalState.loaiDe = deGoc.loaiDe || 'tracnghiem';
                 modalState.tenDe = ketQua.tenDe || deGoc.tenDe || 'Bài tập';
@@ -1050,7 +1113,11 @@
             const answer = modalState.answers[q.number] ?? 'Chưa làm';
             const content = document.getElementById('modalQuestionContent');
 
-            let htmlQ = `
+            let htmlQ = modalState.instructions
+                ? `<div class="exam-instruction"><span class="exam-instruction-title">📌 Đề bài</span>${escapeHtmlGV(modalState.instructions)}</div>`
+                : '';
+
+            htmlQ += `
                 <div class="submission-question">
                     <div class="submission-question-top">
                         <div class="submission-q-number">CÂU ${q.number}</div>

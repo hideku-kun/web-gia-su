@@ -129,6 +129,26 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+
+        .exercise-instruction {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 14px;
+            line-height: 1.7;
+            font-size: 15px;
+            white-space: pre-wrap;
+            box-shadow: 0 3px 15px rgba(16,24,40,.035);
+        }
+        .exercise-instruction-title {
+            display: block;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
         /* Exercise */
         .exercise-shell { display: none; }
 
@@ -733,6 +753,18 @@
             return questions.slice(0, Number(soCau) || questions.length);
         }
 
+        function layDeBaiHS(rawText) {
+            const lines = (rawText || '').replace(/\r/g, '').split('\n');
+            const intro = [];
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) continue;
+                if (/^(?:(?:Câu|Question)\s*)?\d+\s*(?:[.):\-]\s+)(.*)$/i.test(line)) break;
+                intro.push(line);
+            }
+            return intro.join('\n').trim();
+        }
+
         // ---------- Render ----------
         window.taiDeBai = () => {
             const select = document.getElementById('chonDe');
@@ -749,7 +781,8 @@
                 ten: opt.text,
                 soCau: Number(opt.dataset.soCau) || 0,
                 loaiDe: opt.dataset.loaiDe || 'tracnghiem',
-                noiDung: opt.dataset.noiDung || ""
+                noiDung: opt.dataset.noiDung || "",
+                instructions: layDeBaiHS(opt.dataset.noiDung || "")
             };
 
             document.getElementById('tenDeHienThi').textContent = deHienTai.ten;
@@ -812,6 +845,14 @@
 
             list.innerHTML = "";
             nav.innerHTML = "";
+
+            if (deHienTai.instructions) {
+                const instruction = document.createElement('div');
+                instruction.className = 'exercise-instruction';
+                instruction.innerHTML =
+                    `<span class="exercise-instruction-title">📌 Đề bài</span>${escapeHtml(deHienTai.instructions)}`;
+                list.appendChild(instruction);
+            }
 
             const questions = deHienTai.cauHoi || [];
             const total = questions.length;
