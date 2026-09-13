@@ -536,7 +536,9 @@
             };
 
             for (const line of lines) {
-                const qMatch = line.match(/^(?:Câu\s*)?(\d+)[.)]\s*(.*)$/i);
+                // Chấp nhận nhiều kiểu đánh số mà người dạy thường dùng:
+                // 1. ..., 1) ..., 1: ..., 1 - ..., Câu 1. ..., Câu 1: ...
+                const qMatch = line.match(/^(?:(?:Câu|Question)\s*)?(\d+)\s*(?:[.):\-]\s+)(.*)$/i);
 
                 if (qMatch) {
                     push();
@@ -846,7 +848,9 @@
             };
 
             for (const line of lines) {
-                const qMatch = line.match(/^(?:Câu\s*)?(\d+)[.)]\s*(.*)$/i);
+                // Chấp nhận nhiều kiểu đánh số mà người dạy thường dùng:
+                // 1. ..., 1) ..., 1: ..., 1 - ..., Câu 1. ..., Câu 1: ...
+                const qMatch = line.match(/^(?:(?:Câu|Question)\s*)?(\d+)\s*(?:[.):\-]\s+)(.*)$/i);
 
                 if (qMatch) {
                     push();
@@ -862,7 +866,7 @@
                 if (!current) continue;
 
                 if (loaiDe !== 'dientu') {
-                    const optMatch = line.match(/^([ABCD])[.)]\s*(.*)$/i);
+                    const optMatch = line.match(/^([ABCD])\s*(?:[.):\-]\s+|\s+)(.*)$/i);
                     if (optMatch) {
                         current.options.push({
                             letter: optMatch[1].toUpperCase(),
@@ -883,15 +887,13 @@
 
             push();
 
-            if (!questions.length && soCau) {
-                for (let i = 1; i <= Number(soCau); i++) {
-                    questions.push({
-                        number: i,
-                        text: `Câu ${i}`,
-                        options: [],
-                        correct: ''
-                    });
-                }
+            if (!questions.length && text) {
+                questions.push({
+                    number: 1,
+                    text: text,
+                    options: [],
+                    correct: ''
+                });
             }
 
             return questions.slice(0, Number(soCau) || questions.length);
@@ -904,6 +906,65 @@
             loaiDe: 'tracnghiem',
             tenDe: ''
         };
+
+        function parseDeTheoDong(rawText, loaiDe) {
+            const lines = (rawText || '').replace(/\r/g, '').split('\n');
+            const questions = [];
+            let current = null;
+
+            const push = () => {
+                if (current && current.text.trim()) {
+                    current.options = current.options || [];
+                    questions.push(current);
+                }
+            };
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) continue;
+
+                const qMatch = line.match(
+                    /^(?:(?:Câu|Question)\s*)?(\d+)\s*(?:[.):\-]\s+)(.*)$/i
+                );
+
+                if (qMatch) {
+                    push();
+                    current = {
+                        number: Number(qMatch[1]),
+                        text: qMatch[2],
+                        options: [],
+                        correct: ''
+                    };
+                    continue;
+                }
+
+                if (!current) continue;
+
+                if (loaiDe !== 'dientu') {
+                    const opt = line.match(/^([ABCD])\s*(?:[.):\-]\s+|\s+)(.*)$/i);
+                    if (opt) {
+                        current.options.push({
+                            letter: opt[1].toUpperCase(),
+                            text: opt[2]
+                        });
+                        continue;
+                    }
+
+                    const ans = line.match(
+                        /^(?:Đáp án|Đ\/A|Answer|ANSWER)\s*:\s*([ABCD])/i
+                    );
+                    if (ans) {
+                        current.correct = ans[1].toUpperCase();
+                        continue;
+                    }
+                }
+
+                current.text += '\n' + line;
+            }
+
+            push();
+            return questions;
+        }
 
         window.moBaiLam = async (submissionId) => {
             const ketQua = baiNopCache.get(submissionId);
@@ -926,11 +987,21 @@
 
                 const deGoc = { id: deSnap.id, ...deSnap.data() };
 
+                const noiDungGoc = deGoc.noiDungDe || '';
                 modalState.questions = parseDeGV(
-                    deGoc.noiDungDe || '',
+                    noiDungGoc,
                     deGoc.soLuongCau,
                     deGoc.loaiDe || 'tracnghiem'
                 );
+
+                // Nếu đề khai báo nhiều câu nhưng parser chỉ nhận 1 câu,
+                // thử parser dòng-question với các dạng đánh số phổ biến.
+                if (Number(deGoc.soLuongCau) > 1 && modalState.questions.length === 1) {
+                    const fallbackQuestions = parseDeTheoDong(noiDungGoc, deGoc.loaiDe || 'tracnghiem');
+                    if (fallbackQuestions.length > modalState.questions.length) {
+                        modalState.questions = fallbackQuestions;
+                    }
+                }
                 modalState.answers = ketQua.dapAn || {};
                 modalState.current = 0;
                 modalState.loaiDe = deGoc.loaiDe || 'tracnghiem';
