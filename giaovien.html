@@ -504,7 +504,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyC2NWucutuC443gUpIl2IonrFjTuHaCZ2c", authDomain: "lop-hoc-tieng-anh.firebaseapp.com", projectId: "lop-hoc-tieng-anh" }));
 
@@ -910,18 +910,21 @@
             if (!ketQua) return alert('Không tìm thấy bài làm.');
 
             try {
-                // Lấy đề gốc để ghép câu hỏi với đáp án học sinh.
-                const snap = await getDocs(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")));
-                let deGoc = null;
-
-                snap.forEach(d => {
-                    if (d.id === ketQua.idDe) deGoc = { id: d.id, ...d.data() };
-                });
-
-                if (!deGoc) {
-                    alert('Không tìm thấy đề gốc. Bài làm vẫn có thể xem đáp án ở bảng Tiến độ.');
+                // Lấy đúng đề gốc bằng ID đã lưu trong bài nộp.
+                // Cách này ổn định hơn việc query toàn bộ danhsach_de.
+                if (!ketQua.idDe) {
+                    alert('Bài nộp này chưa lưu ID của đề gốc nên không thể ghép câu hỏi với đáp án.');
                     return;
                 }
+
+                const deSnap = await getDoc(doc(db, "danhsach_de", ketQua.idDe));
+
+                if (!deSnap.exists()) {
+                    alert('Không tìm thấy đề gốc của bài làm này. Có thể đề đã bị xóa.');
+                    return;
+                }
+
+                const deGoc = { id: deSnap.id, ...deSnap.data() };
 
                 modalState.questions = parseDeGV(
                     deGoc.noiDungDe || '',
@@ -943,8 +946,8 @@
                 document.getElementById('modalBaiLam').classList.add('show');
                 document.body.style.overflow = 'hidden';
             } catch (e) {
-                console.error(e);
-                alert('Không thể tải chi tiết bài làm.');
+                console.error('Lỗi xem bài làm:', e);
+                alert(`Không thể tải chi tiết bài làm.\n\n${e?.message || 'Lỗi không xác định'}`);
             }
         };
 
