@@ -439,36 +439,6 @@
 
         .btn-nop:hover { background: var(--primary-hover); }
 
-
-        .exam-section-student {
-            background: transparent;
-            margin-bottom: 16px;
-        }
-        .exam-section-student-title {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px 14px 0 0;
-            padding: 15px 18px;
-            color: var(--primary);
-            font-size: 16px;
-            font-weight: 700;
-        }
-        .exam-section-student-instruction {
-            background: #F8FAFC;
-            border: 1px solid var(--border);
-            border-top: none;
-            padding: 14px 18px;
-            white-space: pre-wrap;
-            line-height: 1.7;
-            color: var(--text-sub);
-            font-size: 14px;
-        }
-        .exam-section-questions {
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
         /* Flashcards */
         .flashcard-wrapper {
             display: flex;
@@ -549,6 +519,19 @@
             .question-card { padding: 16px; }
             .number-grid { grid-template-columns: repeat(5, 1fr); }
             .inline-answer { width: 65%; min-width: 110px; }
+        }
+
+        .student-section {
+            margin: 6px 0 18px;
+        }
+        .student-section-title {
+            padding: 13px 16px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            background: #EEF2FF;
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -676,177 +659,144 @@
         loadDanhSachDe();
 
         // ---------- Parser ----------
-
-        function isSectionHeader(line) {
-            return /^(?:PHẦN|PART)\s+[A-Z0-9]+(?:\s*[-–—:.)]\s*.*)?$/i.test(line.trim());
-        }
-
-        function parseSectionHeader(line) {
-            const m = line.trim().match(/^(PHẦN|PART)\s+([A-Z0-9]+)(?:\s*[-–—:.)]\s*(.*))?$/i);
-            if (!m) return null;
-            const prefix = m[1].toUpperCase() === 'PART' ? 'PART' : 'PHẦN';
-            const code = m[2].toUpperCase();
-            const rest = (m[3] || '').trim();
-            return {
-                title: rest ? `${prefix} ${code} – ${rest}` : `${prefix} ${code}`,
-                code,
-                raw: line.trim()
-            };
-        }
-
-        function isQuestionLine(line) {
-            return /^(?:(?:Câu|Question)\s*)?\d+\s*[.):\-]\s+.+$/i.test(line.trim());
-        }
-
-        function parseQuestionLine(line) {
-            const m = line.trim().match(/^(?:(?:Câu|Question)\s*)?(\d+)\s*[.):\-]\s+(.+)$/i);
-            if (!m) return null;
-            return { number: Number(m[1]), text: m[2].trim() };
-        }
-
-        function parseOptionLine(line) {
-            const m = line.trim().match(/^([ABCD])\s*[.):\-]\s+(.+)$/i);
-            return m ? { letter: m[1].toUpperCase(), text: m[2].trim() } : null;
-        }
-
-        function parseAnswerLine(line) {
-            const m = line.trim().match(/^(?:Đáp án|Đ\/A|Answer|ANSWER)\s*:\s*([ABCD])\s*$/i);
-            return m ? m[1].toUpperCase() : '';
-        }
-
-        function parseExam(rawText, loaiDe) {
-            const raw = (rawText || '').replace(/\r/g, '');
-            const lines = raw.split('\n');
+        // Parser dùng chung một chuẩn cho đề cũ và đề mới:
+        // - PHẦN A / PART A / PHẦN A – TITLE
+        // - Question 1: / Câu 1: / 1. / 1)
+        // - A. / A) / A:
+        // - Giữ instruction + Box + nội dung trước câu hỏi
+        // - Giữ số câu thật, không dùng index + 1 để thay số câu.
+        function parseDeHocSinh(rawText, loaiDe) {
+            const lines = (rawText || '').replace(/\r/g, '').split('\n');
             const sections = [];
-            const allQuestions = [];
-            let currentSection = null;
-            let currentQuestion = null;
-            let preamble = [];
+            let section = null;
+            let current = null;
+            let intro = [];
 
-            const ensureSection = () => {
-                if (!currentSection) {
-                    currentSection = {
-                        title: '',
-                        instructions: [],
-                        questions: []
-                    };
-                    sections.push(currentSection);
-                }
-                return currentSection;
-            };
+            const isSectionLine = (line) =>
+                /^(PHẦN|PHAN|PART)\s+[A-Z0-9]+(?:\s*(?:[-–—:]\s*).*)?$/i.test(line);
 
             const pushQuestion = () => {
-                if (!currentQuestion) return;
-                if (!currentQuestion.text.trim()) return;
-                const target = ensureSection();
-                currentQuestion.options = currentQuestion.options || [];
-                target.questions.push(currentQuestion);
-                allQuestions.push(currentQuestion);
-                currentQuestion = null;
+                if (!current || !current.text.trim()) return;
+                current.options = current.options || [];
+                if (section) {
+                    section.questions.push(current);
+                }
+                current = null;
             };
 
             const pushSection = () => {
                 pushQuestion();
-                currentSection = null;
+                if (section && (section.title || section.instructions || section.questions.length)) {
+                    sections.push(section);
+                }
             };
 
             for (const rawLine of lines) {
                 const line = rawLine.trim();
-                if (!line) {
-                    // Preserve blank lines inside section instructions/content only when meaningful.
-                    if (currentSection && !currentQuestion && currentSection.instructions.length) {
-                        currentSection.instructions.push('');
-                    }
-                    continue;
-                }
+                if (!line) continue;
 
-                if (isSectionHeader(line)) {
+                if (isSectionLine(line)) {
                     pushSection();
-                    const header = parseSectionHeader(line);
-                    currentSection = {
-                        title: header.title,
-                        instructions: [],
-                        questions: []
+                    section = {
+                        title: line,
+                        instructions: '',
+                        questions: [],
+                        preamble: []
                     };
-                    sections.push(currentSection);
                     continue;
                 }
 
-                const q = parseQuestionLine(line);
-                if (q) {
+                const qMatch = line.match(
+                    /^(?:(?:Câu|Question)\s*)?(\d+)\s*(?:[.):\-]\s+)(.*)$/i
+                );
+
+                if (qMatch) {
+                    if (!section) {
+                        section = {
+                            title: '',
+                            instructions: '',
+                            questions: [],
+                            preamble: []
+                        };
+                    }
                     pushQuestion();
-                    currentSection = ensureSection();
-                    currentQuestion = {
-                        number: q.number,
-                        text: q.text,
+                    current = {
+                        number: Number(qMatch[1]),
+                        text: qMatch[2],
                         options: [],
                         correct: ''
                     };
                     continue;
                 }
 
-                if (!currentSection) {
-                    // Content before the first section/question is global instructions.
-                    preamble.push(line);
+                if (!section) {
+                    intro.push(line);
                     continue;
                 }
 
-                if (currentQuestion) {
-                    if (loaiDe === 'tracnghiem') {
-                        const opt = parseOptionLine(line);
-                        if (opt) {
-                            currentQuestion.options.push(opt);
-                            continue;
-                        }
-
-                        const answer = parseAnswerLine(line);
-                        if (answer) {
-                            currentQuestion.correct = answer;
-                            continue;
-                        }
-                    }
-                    currentQuestion.text += '\n' + line;
-                } else {
-                    // Keep every instruction/Box/Word box line exactly as supplied.
-                    currentSection.instructions.push(line);
+                if (!current) {
+                    section.preamble.push(line);
+                    continue;
                 }
+
+                if (loaiDe !== 'dientu') {
+                    const optionMatch = line.match(/^([ABCD])\s*(?:[.):\-]\s+|\s+)(.*)$/i);
+                    if (optionMatch) {
+                        current.options.push({
+                            letter: optionMatch[1].toUpperCase(),
+                            text: optionMatch[2]
+                        });
+                        continue;
+                    }
+
+                    // ANSWER được đọc để teacher/AI dùng về sau, nhưng KHÔNG render cho học sinh.
+                    const answerMatch = line.match(
+                        /^(?:Đáp án|Đ\/A|Answer|ANSWER)\s*:\s*([ABCD])/i
+                    );
+                    if (answerMatch) {
+                        current.correct = answerMatch[1].toUpperCase();
+                        continue;
+                    }
+                }
+
+                current.text += '\n' + line;
             }
 
-            pushQuestion();
+            pushSection();
 
-            // Remove accidental empty sections.
-            const cleanSections = sections.filter(sec =>
-                sec.title || sec.instructions.some(x => x.trim()) || sec.questions.length
-            );
-
-            // If no explicit section exists, preserve old behavior as one default section.
-            if (!cleanSections.length && (preamble.length || allQuestions.length)) {
-                cleanSections.push({
+            // Đề không có section: tạo một section mặc định.
+            if (!sections.length && (intro.length || rawText.trim())) {
+                sections.push({
                     title: '',
-                    instructions: preamble,
-                    questions: allQuestions
+                    instructions: intro.join('\n'),
+                    questions: []
                 });
-            } else if (cleanSections.length && preamble.length) {
-                // Preamble before first section is retained as global instructions in the first section.
-                const first = cleanSections[0];
-                first.instructions = [...preamble, ...first.instructions];
+            } else if (intro.length) {
+                // Nội dung trước PHẦN A được giữ ở đầu section đầu tiên.
+                sections[0].instructions =
+                    [intro.join('\n'), sections[0].preamble?.join('\n') || '']
+                    .filter(Boolean).join('\n');
             }
 
-            // Keep the exact question numbers and compute count from actual questions.
-            const questions = cleanSections.flatMap(sec => sec.questions);
+            // Chuyển preamble của mỗi section thành instruction, giữ nguyên Box.
+            sections.forEach(sec => {
+                const p = sec.preamble || [];
+                sec.instructions = p.join('\n').trim();
+                delete sec.preamble;
+            });
 
-            return {
-                preamble: preamble.join('\n').trim(),
-                sections: cleanSections,
-                questions,
-                questionNumbers: questions.map(q => q.number),
-                count: questions.length
-            };
+            const questions = sections.flatMap(sec => sec.questions);
+            return { sections, questions };
         }
 
         function tachCauHoi(rawText, soCau, loaiDe) {
-            const parsed = parseExam(rawText, loaiDe);
-            return parsed;
+            const parsed = parseDeHocSinh(rawText, loaiDe);
+            return parsed.questions;
+        }
+
+        function layDeBaiHS(rawText) {
+            const parsed = parseDeHocSinh(rawText, 'dientu');
+            return parsed.sections.length ? parsed.sections[0].instructions || '' : '';
         }
 
         // ---------- Render ----------
@@ -860,22 +810,41 @@
             }
 
             const opt = select.options[select.selectedIndex];
-            const raw = opt.dataset.noiDung || '';
-            const loaiDe = opt.dataset.loaiDe || 'tracnghiem';
-            const parsed = parseExam(raw, loaiDe);
-
             deHienTai = {
                 id: opt.value,
                 ten: opt.text,
-                soCau: parsed.count,
-                loaiDe,
-                noiDung: raw,
-                parsed,
-                cauHoi: parsed.questions,
-                instructions: parsed.preamble
+                soCau: Number(opt.dataset.soCau) || 0,
+                loaiDe: opt.dataset.loaiDe || 'tracnghiem',
+                noiDung: opt.dataset.noiDung || "",
+                instructions: layDeBaiHS(opt.dataset.noiDung || ""),
+                sections: []
             };
 
             document.getElementById('tenDeHienThi').textContent = deHienTai.ten;
+
+            const parsed = parseDeHocSinh(
+                deHienTai.noiDung,
+                deHienTai.loaiDe
+            );
+
+            deHienTai.sections = parsed.sections;
+            deHienTai.cauHoi = parsed.questions;
+
+            // Chỉ fallback khi thực sự không có câu nào; không tạo "Câu 1" giả nếu
+            // đề gốc có nội dung, để tránh che mất đề.
+            if (!deHienTai.cauHoi.length && deHienTai.noiDung.trim()) {
+                deHienTai.cauHoi = [{
+                    number: 1,
+                    text: deHienTai.noiDung,
+                    options: [],
+                    correct: ""
+                }];
+                deHienTai.sections = [{
+                    title: '',
+                    instructions: '',
+                    questions: deHienTai.cauHoi
+                }];
+            }
             renderBaiTap();
 
             const khuVuc = document.getElementById('khuVucLamBai');
@@ -883,65 +852,127 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function renderQuestionText(text, number, loaiDe) {
+            const safe = escapeHtml(text);
+
+            if (loaiDe === 'dientu') {
+                // ___ = ô trả lời trực tiếp giữa câu.
+                let index = 0;
+                const withInputs = safe.replace(/_{3,}/g, () => {
+                    index++;
+                    return `<input class="inline-answer" data-question="${number}" data-blank="${index}" placeholder="Nhập đáp án..." autocomplete="off">`;
+                });
+
+                return `<div class="question-text"><span class="question-number">${number}</span>${withInputs}</div>`;
+            }
+
+            return `<div class="question-text"><span class="question-number">${number}</span>${safe}</div>`;
+        }
+
         function renderBaiTap() {
             const list = document.getElementById('danhSachCauHoi');
             const nav = document.getElementById('luoiSoCau');
-            list.innerHTML = '';
-            nav.innerHTML = '';
 
-            const parsed = deHienTai.parsed;
-            const questions = parsed.questions || [];
+            list.innerHTML = "";
+            nav.innerHTML = "";
+
+            const sections = deHienTai.sections || [];
+            const questions = deHienTai.cauHoi || [];
             const total = questions.length;
 
-            parsed.sections.forEach(section => {
-                if (section.title) {
-                    const sectionCard = document.createElement('section');
-                    sectionCard.className = 'exam-section-student';
+            // Render theo section để PHẦN B không bao giờ bị nối vào câu cuối PHẦN A.
+            sections.forEach((section, sectionIndex) => {
+                if (section.title || section.instructions) {
+                    const sectionBox = document.createElement('section');
+                    sectionBox.className = 'student-section';
 
-                    const title = document.createElement('div');
-                    title.className = 'exam-section-student-title';
-                    title.textContent = `📌 ${section.title}`;
-                    sectionCard.appendChild(title);
-
-                    if (section.instructions.length) {
-                        const instruction = document.createElement('div');
-                        instruction.className = 'exam-section-student-instruction';
-                        instruction.textContent = section.instructions.join('\n');
-                        sectionCard.appendChild(instruction);
+                    if (section.title) {
+                        const title = document.createElement('div');
+                        title.className = 'student-section-title';
+                        title.textContent = section.title;
+                        sectionBox.appendChild(title);
                     }
 
-                    const questionList = document.createElement('div');
-                    questionList.className = 'exam-section-questions';
-                    section.questions.forEach(q => questionList.appendChild(createStudentQuestionCard(q)));
-                    sectionCard.appendChild(questionList);
-                    list.appendChild(sectionCard);
-                } else {
-                    if (section.instructions.length) {
+                    if (section.instructions) {
                         const instruction = document.createElement('div');
                         instruction.className = 'exercise-instruction';
                         instruction.innerHTML =
-                            `<span class="exercise-instruction-title">📌 Đề bài</span>${escapeHtml(section.instructions.join('\n'))}`;
-                        list.appendChild(instruction);
+                            `<span class="exercise-instruction-title">📌 Hướng dẫn</span>${escapeHtml(section.instructions)}`;
+                        sectionBox.appendChild(instruction);
                     }
-                    section.questions.forEach(q => list.appendChild(createStudentQuestionCard(q)));
+
+                    list.appendChild(sectionBox);
                 }
+
+                (section.questions || []).forEach(q => {
+                    const card = document.createElement('article');
+                    card.className = 'question-card';
+                    card.id = `question-${q.number}`;
+                    card.dataset.question = q.number;
+
+                    let content = renderQuestionText(q.text, q.number, deHienTai.loaiDe);
+
+                    if (deHienTai.loaiDe !== 'dientu') {
+                        if (q.options && q.options.length) {
+                            content += `<div class="options-list">`;
+                            q.options.forEach(option => {
+                                content += `
+                                    <label class="answer-option">
+                                        <input type="radio" name="cau${q.number}" value="${escapeHtml(option.letter)}">
+                                        <span class="letter">${escapeHtml(option.letter)}</span>
+                                        <span class="option-text">${escapeHtml(option.text)}</span>
+                                    </label>`;
+                            });
+                            content += `</div>`;
+                        } else {
+                            content += `<div class="question-help">⚠️ Chưa nhận diện được các lựa chọn A/B/C/D trong đề này.</div>`;
+                        }
+                    } else if (!q.text.includes("___")) {
+                        content += `
+                            <div class="question-help">
+                                <input class="inline-answer" data-question="${q.number}" data-blank="1"
+                                    placeholder="Nhập đáp án..." autocomplete="off">
+                            </div>`;
+                    }
+
+                    card.innerHTML = content;
+                    list.appendChild(card);
+
+                    const navBtn = document.createElement('button');
+                    navBtn.className = 'number-btn';
+                    navBtn.textContent = q.number;
+                    navBtn.dataset.question = q.number;
+                    navBtn.onclick = () => {
+                        document.getElementById(`question-${q.number}`)
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    };
+                    nav.appendChild(navBtn);
+                });
             });
 
-            questions.forEach(q => {
-                const navBtn = document.createElement('button');
-                navBtn.className = 'number-btn';
-                navBtn.textContent = q.number;
-                navBtn.onclick = () => {
-                    document.getElementById(`question-${q.number}`)?.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                };
-                nav.appendChild(navBtn);
-            });
+            // Nếu section không tồn tại vì dữ liệu cũ bất thường, vẫn render toàn bộ câu.
+            if (!sections.length && questions.length) {
+                questions.forEach(q => {
+                    const card = document.createElement('article');
+                    card.className = 'question-card';
+                    card.id = `question-${q.number}`;
+                    card.dataset.question = q.number;
+                    card.innerHTML = renderQuestionText(q.text, q.number, deHienTai.loaiDe);
+                    list.appendChild(card);
+                });
+            }
 
             document.getElementById('tienDo').textContent = `0 / ${total} câu`;
-            document.getElementById('thanhTienDo').style.width = '0%';
+            document.getElementById('thanhTienDo').style.width = "0%";
 
             list.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', capNhatTienDo);
@@ -951,51 +982,14 @@
             capNhatTienDo();
         }
 
-        function createStudentQuestionCard(q) {
-            const card = document.createElement('article');
-            card.className = 'question-card';
-            card.id = `question-${q.number}`;
-            card.dataset.question = q.number;
-
-            let textHtml = escapeHtml(q.text).replace(
-                /_{3,}/g,
-                `<input class="inline-answer" data-question="${q.number}" placeholder="Nhập đáp án..." autocomplete="off">`
-            );
-
-            let content = `<div class="question-text"><span class="question-number">${q.number}</span>${textHtml}</div>`;
-
-            if (deHienTai.loaiDe === 'tracnghiem') {
-                if (q.options.length) {
-                    content += '<div class="options-list">';
-                    q.options.forEach(option => {
-                        content += `
-                            <label class="answer-option">
-                                <input type="radio" name="cau${q.number}" value="${escapeHtml(option.letter)}">
-                                <span class="letter">${escapeHtml(option.letter)}</span>
-                                <span class="option-text">${escapeHtml(option.text)}</span>
-                            </label>`;
-                    });
-                    content += '</div>';
-                } else {
-                    content += `<div class="question-help">⚠️ Câu này chưa có lựa chọn A/B/C/D.</div>`;
-                }
-            } else if (!q.text.includes('___')) {
-                content += `<input class="inline-answer" data-question="${q.number}" data-blank="1" placeholder="Nhập đáp án..." autocomplete="off">`;
-            }
-
-            card.innerHTML = content;
-            return card;
-        }
-
         function cauDaTraLoi(questionNumber) {
-            const q = deHienTai?.cauHoi?.find(item => item.number === questionNumber);
-            if (!q) return false;
+            if (!deHienTai?.cauHoi?.some(q => q.number === questionNumber)) return false;
 
             if (deHienTai.loaiDe === 'dientu') {
                 const inputs = document.querySelectorAll(
                     `.inline-answer[data-question="${questionNumber}"]`
                 );
-                return Array.from(inputs).some(input => input.value.trim() !== '');
+                return Array.from(inputs).some(input => input.value.trim() !== "");
             }
 
             return !!document.querySelector(`input[name="cau${questionNumber}"]:checked`);
@@ -1005,7 +999,6 @@
             if (!deHienTai?.cauHoi) return;
 
             const questions = deHienTai.cauHoi;
-            const total = questions.length;
             let done = 0;
 
             questions.forEach(q => {
@@ -1013,44 +1006,40 @@
                 if (answered) done++;
 
                 const card = document.getElementById(`question-${q.number}`);
-                const btn = Array.from(document.querySelectorAll('.number-btn'))
-                    .find(x => x.textContent === String(q.number));
+                const btn = document.querySelector(
+                    `.number-btn[data-question="${q.number}"]`
+                );
 
                 card?.classList.toggle('answered', answered);
                 btn?.classList.toggle('answered', answered);
             });
 
-            document.getElementById('tienDo').textContent = `${done} / ${total} câu`;
+            document.getElementById('tienDo').textContent =
+                `${done} / ${questions.length} câu`;
             document.getElementById('thanhTienDo').style.width =
-                `${total ? Math.round(done / total * 100) : 0}%`;
+                `${questions.length ? Math.round(done / questions.length * 100) : 0}%`;
         }
 
         // ---------- Submit ----------
         window.nopBai = async () => {
             if (!deHienTai) return;
+
             if (!confirm("Kiểm tra kỹ lại nhé, bạn chắc chắn muốn nộp bài?")) return;
 
-            const dapAnHocSinh = {};
+            let dapAnHocSinh = {};
 
-            deHienTai.cauHoi.forEach(q => {
+            for (const q of deHienTai.cauHoi) {
+                const n = q.number;
+
                 if (deHienTai.loaiDe === 'dientu') {
-                    const inputs = document.querySelectorAll(
-                        `.inline-answer[data-question="${q.number}"]`
-                    );
-                    const values = Array.from(inputs)
-                        .map(input => input.value.trim())
-                        .filter(Boolean);
-
-                    dapAnHocSinh[q.number] =
-                        values.length ? values.join(' | ') : 'Chưa làm';
+                    const inputs = document.querySelectorAll(`.inline-answer[data-question="${n}"]`);
+                    const values = Array.from(inputs).map(x => x.value.trim()).filter(Boolean);
+                    dapAnHocSinh[n] = values.length ? values.join(" | ") : "Chưa làm";
                 } else {
-                    const chon = document.querySelector(
-                        `input[name="cau${q.number}"]:checked`
-                    );
-                    dapAnHocSinh[q.number] =
-                        chon ? chon.value : 'Chưa làm';
+                    const chon = document.querySelector(`input[name="cau${n}"]:checked`);
+                    dapAnHocSinh[n] = chon ? chon.value : "Chưa làm";
                 }
-            });
+            }
 
             try {
                 await addDoc(collection(db, "ketqua_hocsinh"), {
@@ -1062,7 +1051,7 @@
 
                 alert("Nộp bài thành công!");
                 document.getElementById('khuVucLamBai').style.display = 'none';
-                document.getElementById('chonDe').value = '';
+                document.getElementById('chonDe').value = "";
                 deHienTai = null;
             } catch (e) {
                 console.error(e);
