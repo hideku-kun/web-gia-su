@@ -205,6 +205,103 @@
             border-radius: 4px;
         }
 
+
+        .exam-section-card {
+            margin: 0 0 16px;
+            padding: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .exam-section-title {
+            padding: 14px 16px;
+            background: #F8FAFC;
+            border-bottom: 1px solid var(--border);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .exam-section-instruction {
+            padding: 14px 16px;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            color: var(--text-sub);
+            font-size: 14px;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        .student-preview-meta {
+            margin-bottom: 12px;
+            color: var(--text-sub);
+            font-size: 13px;
+        }
+        .student-preview-section {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            background: #F8FAFC;
+        }
+        .student-preview-section-title {
+            padding: 14px 16px;
+            background: #F8FAFC;
+            color: var(--primary);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border);
+        }
+        .student-preview-instruction {
+            padding: 14px 16px;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            color: var(--text-sub);
+            background: white;
+        }
+        .student-preview-question {
+            margin: 10px;
+            padding: 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+        }
+        .student-preview-qtext { line-height: 1.7; }
+        .preview-student-input {
+            display: inline-block;
+            width: 130px;
+            border: none;
+            border-bottom: 2px solid #98A2B3;
+            background: #F8FAFC;
+            padding: 3px 7px;
+            margin: 0 4px;
+            border-radius: 5px 5px 0 0;
+        }
+        .preview-student-full-input {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .student-preview-options {
+            display: grid;
+            gap: 7px;
+            margin-top: 12px;
+        }
+        .student-preview-option {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 9px 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .student-preview-option span {
+            width: 25px; height: 25px;
+            display: grid; place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-weight: 700;
+        }
         /* ===== Modal xem bài học sinh ===== */
         .modal-overlay {
             display: none;
@@ -406,7 +503,7 @@
 
             <div id="tiendo" class="section">
                 <div style="overflow-x: auto;">
-                    <table><thead><tr><th>Tên Đề</th><th>Ngày nộp</th><th>Đáp án</th><th>Xem bài</th><th>Chấm bằng AI</th></tr></thead><tbody id="bangTienDo"></tbody></table>
+                    <table><thead><tr><th>Tên Đề</th><th>Ngày nộp</th><th>Đáp án</th><th>Xem bài</th></tr></thead><tbody id="bangTienDo"></tbody></table>
                 </div>
             </div>
 
@@ -419,7 +516,7 @@
                         <option value="tracnghiem">Trắc nghiệm (A, B, C, D)</option>
                         <option value="dientu">Điền từ / Tự luận</option>
                     </select>
-                    <input type="number" id="soLuongCau" placeholder="Số câu (tự đếm nếu để trống)" style="flex: 1;" min="1">
+                    <input type="number" id="soLuongCau" placeholder="Số câu (tự động nếu để trống)" style="flex: 1;" min="1">
                 </div>
 
                 <textarea id="noiDungDe" placeholder="Dán đề từ ChatGPT/Gemini vào đây..."></textarea>
@@ -429,7 +526,7 @@
                         💡 Trắc nghiệm: mỗi câu gồm câu hỏi + A/B/C/D + <strong>ANSWER: A</strong>.
                     </div>
                     <div class="editor-actions">
-                        <button class="btn-preview" onclick="xemTruocDe()">👁 Xem trước đề</button>
+                        <button class="btn-preview" onclick="xemTruocDe()">👁 Xem trước đề</button><button class="btn-preview" onclick="xemNhuHocSinh()">👨‍🎓 Xem như học sinh</button>
                         <button class="btn-main" onclick="themDeKiemTra()">🚀 Phát hành đề</button>
                     </div>
                 </div>
@@ -487,6 +584,20 @@
     </div>
 
 
+    <!-- Modal xem đề như học sinh -->
+    <div id="modalXemNhuHocSinh" class="modal-overlay" onclick="if(event.target.id==='modalXemNhuHocSinh') dongModalXemNhuHocSinh()">
+        <div class="submission-modal" role="dialog" aria-modal="true">
+            <div class="submission-header">
+                <div>
+                    <h3 id="studentPreviewTitle" class="submission-title">Xem như học sinh</h3>
+                    <div class="submission-meta">Kiểm tra giao diện trước khi phát hành · Không hiển thị đáp án đúng</div>
+                </div>
+                <button class="modal-close" onclick="dongModalXemNhuHocSinh()">×</button>
+            </div>
+            <div id="studentPreviewBody" class="submission-content"></div>
+        </div>
+    </div>
+
     <!-- Modal xem bài học sinh -->
     <div id="modalBaiLam" class="modal-overlay" onclick="dongModalNeuClickNen(event)">
         <div class="submission-modal" role="dialog" aria-modal="true" aria-labelledby="modalSubmissionTitle">
@@ -539,61 +650,177 @@
         window.xuatWord = () => { const b = document.getElementById('bangDiemDanh').innerHTML, l = document.createElement('a'); l.href = URL.createObjectURL(new Blob(['\ufeff<html xmlns:w="urn:schemas-microsoft-com:office:word"><body><h2 align="center">BÁO CÁO</h2><table border="1" style="border-collapse:collapse;width:100%">' + b + '</table></body></html>'], {type:'application/msword'})); l.download='Bao_Cao.doc'; l.click(); };
         
         // ===== Soạn đề: parser dùng chung với giao diện học sinh =====
-        function parseDeEditor(rawText, loaiDe) {
-            const text = (rawText || '').replace(/\r/g, '').trim();
-            if (!text) return [];
 
-            const lines = text.split('\n').map(x => x.trim()).filter(Boolean);
-            const questions = [];
-            let current = null;
+        function isSectionHeader(line) {
+            return /^(?:PHẦN|PART)\s+[A-Z0-9]+(?:\s*[-–—:.)]\s*.*)?$/i.test(line.trim());
+        }
 
-            const push = () => {
-                if (current && current.text.trim()) {
-                    if (current.options) current.options = current.options.filter(Boolean);
-                    questions.push(current);
+        function parseSectionHeader(line) {
+            const m = line.trim().match(/^(PHẦN|PART)\s+([A-Z0-9]+)(?:\s*[-–—:.)]\s*(.*))?$/i);
+            if (!m) return null;
+            const prefix = m[1].toUpperCase() === 'PART' ? 'PART' : 'PHẦN';
+            const code = m[2].toUpperCase();
+            const rest = (m[3] || '').trim();
+            return {
+                title: rest ? `${prefix} ${code} – ${rest}` : `${prefix} ${code}`,
+                code,
+                raw: line.trim()
+            };
+        }
+
+        function isQuestionLine(line) {
+            return /^(?:(?:Câu|Question)\s*)?\d+\s*[.):\-]\s+.+$/i.test(line.trim());
+        }
+
+        function parseQuestionLine(line) {
+            const m = line.trim().match(/^(?:(?:Câu|Question)\s*)?(\d+)\s*[.):\-]\s+(.+)$/i);
+            if (!m) return null;
+            return { number: Number(m[1]), text: m[2].trim() };
+        }
+
+        function parseOptionLine(line) {
+            const m = line.trim().match(/^([ABCD])\s*[.):\-]\s+(.+)$/i);
+            return m ? { letter: m[1].toUpperCase(), text: m[2].trim() } : null;
+        }
+
+        function parseAnswerLine(line) {
+            const m = line.trim().match(/^(?:Đáp án|Đ\/A|Answer|ANSWER)\s*:\s*([ABCD])\s*$/i);
+            return m ? m[1].toUpperCase() : '';
+        }
+
+        function parseExam(rawText, loaiDe) {
+            const raw = (rawText || '').replace(/\r/g, '');
+            const lines = raw.split('\n');
+            const sections = [];
+            const allQuestions = [];
+            let currentSection = null;
+            let currentQuestion = null;
+            let preamble = [];
+
+            const ensureSection = () => {
+                if (!currentSection) {
+                    currentSection = {
+                        title: '',
+                        instructions: [],
+                        questions: []
+                    };
+                    sections.push(currentSection);
                 }
+                return currentSection;
             };
 
-            for (const line of lines) {
-                // Chấp nhận nhiều kiểu đánh số mà người dạy thường dùng:
-                // 1. ..., 1) ..., 1: ..., 1 - ..., Câu 1. ..., Câu 1: ...
-                const qMatch = line.match(/^(?:(?:Câu|Question)\s*)?(\d+)\s*(?:[.):\-]\s+)(.*)$/i);
+            const pushQuestion = () => {
+                if (!currentQuestion) return;
+                if (!currentQuestion.text.trim()) return;
+                const target = ensureSection();
+                currentQuestion.options = currentQuestion.options || [];
+                target.questions.push(currentQuestion);
+                allQuestions.push(currentQuestion);
+                currentQuestion = null;
+            };
 
-                if (qMatch) {
-                    push();
-                    current = {
-                        number: Number(qMatch[1]),
-                        text: qMatch[2],
+            const pushSection = () => {
+                pushQuestion();
+                currentSection = null;
+            };
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) {
+                    // Preserve blank lines inside section instructions/content only when meaningful.
+                    if (currentSection && !currentQuestion && currentSection.instructions.length) {
+                        currentSection.instructions.push('');
+                    }
+                    continue;
+                }
+
+                if (isSectionHeader(line)) {
+                    pushSection();
+                    const header = parseSectionHeader(line);
+                    currentSection = {
+                        title: header.title,
+                        instructions: [],
+                        questions: []
+                    };
+                    sections.push(currentSection);
+                    continue;
+                }
+
+                const q = parseQuestionLine(line);
+                if (q) {
+                    pushQuestion();
+                    currentSection = ensureSection();
+                    currentQuestion = {
+                        number: q.number,
+                        text: q.text,
                         options: [],
                         correct: ''
                     };
                     continue;
                 }
 
-                if (!current) continue;
-
-                if (loaiDe === 'tracnghiem') {
-                    const optionMatch = line.match(/^([ABCD])[.)]\s*(.*)$/i);
-                    if (optionMatch) {
-                        current.options.push({
-                            letter: optionMatch[1].toUpperCase(),
-                            text: optionMatch[2]
-                        });
-                        continue;
-                    }
-
-                    const answerMatch = line.match(/^(?:Đáp án|Đ\/A|Answer|ANSWER)\s*:\s*([ABCD])/i);
-                    if (answerMatch) {
-                        current.correct = answerMatch[1].toUpperCase();
-                        continue;
-                    }
+                if (!currentSection) {
+                    // Content before the first section/question is global instructions.
+                    preamble.push(line);
+                    continue;
                 }
 
-                current.text += '\n' + line;
+                if (currentQuestion) {
+                    if (loaiDe === 'tracnghiem') {
+                        const opt = parseOptionLine(line);
+                        if (opt) {
+                            currentQuestion.options.push(opt);
+                            continue;
+                        }
+
+                        const answer = parseAnswerLine(line);
+                        if (answer) {
+                            currentQuestion.correct = answer;
+                            continue;
+                        }
+                    }
+                    currentQuestion.text += '\n' + line;
+                } else {
+                    // Keep every instruction/Box/Word box line exactly as supplied.
+                    currentSection.instructions.push(line);
+                }
             }
 
-            push();
-            return questions;
+            pushQuestion();
+
+            // Remove accidental empty sections.
+            const cleanSections = sections.filter(sec =>
+                sec.title || sec.instructions.some(x => x.trim()) || sec.questions.length
+            );
+
+            // If no explicit section exists, preserve old behavior as one default section.
+            if (!cleanSections.length && (preamble.length || allQuestions.length)) {
+                cleanSections.push({
+                    title: '',
+                    instructions: preamble,
+                    questions: allQuestions
+                });
+            } else if (cleanSections.length && preamble.length) {
+                // Preamble before first section is retained as global instructions in the first section.
+                const first = cleanSections[0];
+                first.instructions = [...preamble, ...first.instructions];
+            }
+
+            // Keep the exact question numbers and compute count from actual questions.
+            const questions = cleanSections.flatMap(sec => sec.questions);
+
+            return {
+                preamble: preamble.join('\n').trim(),
+                sections: cleanSections,
+                questions,
+                questionNumbers: questions.map(q => q.number),
+                count: questions.length
+            };
+        }
+
+
+        function parseDeEditor(rawText, loaiDe) {
+            return parseExam(rawText, loaiDe);
         }
 
         function escapeHtmlEditor(value) {
@@ -610,15 +837,7 @@
         }
 
         function layDeBaiEditor(rawText) {
-            const lines = (rawText || '').replace(/\r/g, '').split('\n');
-            const intro = [];
-            for (const rawLine of lines) {
-                const line = rawLine.trim();
-                if (!line) continue;
-                if (/^(?:(?:Câu|Question)\s*)?\d+\s*(?:[.):\-]\s+)(.*)$/i.test(line)) break;
-                intro.push(line);
-            }
-            return intro.join('\n').trim();
+            return parseExam(rawText, document.getElementById('loaiDe')?.value || 'tracnghiem');
         }
 
         window.capNhatGoiYNhapDe = () => {
@@ -647,6 +866,60 @@
             }
         };
 
+        function renderTeacherSections(parsed, showAnswers) {
+            let out = '';
+
+            if (parsed.preamble && !parsed.sections.length) {
+                out += `<div class="exam-instruction"><span class="exam-instruction-title">📌 Đề bài</span>${escapeHtmlEditor(parsed.preamble)}</div>`;
+            }
+
+            parsed.sections.forEach((section, sectionIndex) => {
+                if (section.title) {
+                    out += `
+                        <div class="exam-section-card">
+                            <div class="exam-section-title">📌 ${escapeHtmlEditor(section.title)}</div>
+                            ${section.instructions.length
+                                ? `<div class="exam-section-instruction">${escapeHtmlEditor(section.instructions.join('\n'))}</div>`
+                                : ''}
+                        `;
+                } else if (section.instructions.length) {
+                    out += `
+                        <div class="exam-instruction">
+                            <span class="exam-instruction-title">📌 Đề bài</span>
+                            ${escapeHtmlEditor(section.instructions.join('\n'))}
+                        </div>`;
+                }
+
+                section.questions.forEach(q => {
+                    out += `
+                        <div class="preview-question">
+                            <div class="preview-question-text">
+                                <span class="preview-q-number">${q.number}</span>
+                                ${escapeHtmlEditor(q.text).replace(/_{3,}/g, '<span class="preview-inline">Nhập đáp án...</span>')}
+                            </div>`;
+
+                    if (parsed.loaiDe !== 'dientu' && q.options.length) {
+                        out += '<div class="preview-options">';
+                        q.options.forEach(opt => {
+                            out += `<div class="preview-option"><strong>${escapeHtmlEditor(opt.letter)}.</strong> ${escapeHtmlEditor(opt.text)}</div>`;
+                        });
+                        out += '</div>';
+                        if (showAnswers && q.correct) {
+                            out += `<div class="preview-answer-note">✓ Đã nhận diện đáp án: <strong>${escapeHtmlEditor(q.correct)}</strong></div>`;
+                        }
+                    } else if (parsed.loaiDe === 'dientu' && !q.text.includes('___')) {
+                        out += `<div class="preview-answer-note">💡 Câu này chưa có ___; học sinh sẽ có ô nhập ở cuối câu.</div>`;
+                    }
+
+                    out += '</div>';
+                });
+
+                if (section.title) out += '</div>';
+            });
+
+            return out;
+        }
+
         window.xemTruocDe = () => {
             const raw = document.getElementById('noiDungDe').value.trim();
             const loai = document.getElementById('loaiDe').value;
@@ -659,80 +932,81 @@
                 return alert('Hãy nhập hoặc dán nội dung đề trước.');
             }
 
-            const questions = parseDeEditor(raw, loai);
+            const parsed = parseExam(raw, loai);
+            parsed.loaiDe = loai;
 
-            if (!questions.length) {
+            if (!parsed.count) {
                 preview.classList.add('show');
                 badge.textContent = '0 câu';
-                content.innerHTML = `
-                    <div class="preview-warning">
-                        ⚠️ Web chưa nhận diện được câu hỏi. Hãy đảm bảo mỗi câu bắt đầu bằng
-                        <strong>1.</strong>, <strong>2.</strong>, <strong>3.</strong>...
-                    </div>`;
+                content.innerHTML = `<div class="preview-warning">⚠️ Web chưa nhận diện được câu hỏi. Hãy đảm bảo câu hỏi bắt đầu bằng 1., 2., 3....</div>`;
                 return;
             }
 
-            badge.textContent = `${questions.length} câu`;
+            badge.textContent = `${parsed.count} câu`;
+            content.innerHTML = renderTeacherSections(parsed, true);
+            preview.classList.add('show');
+        };
 
-            let htmlPreview = '';
+        window.xemNhuHocSinh = () => {
+            const raw = document.getElementById('noiDungDe').value.trim();
+            const loai = document.getElementById('loaiDe').value;
+            if (!raw) return alert('Hãy nhập đề trước.');
 
-            const instructions = layDeBaiEditor(raw);
-            if (instructions) {
-                htmlPreview += `
-                    <div class="exam-instruction">
-                        <span class="exam-instruction-title">📌 Đề bài</span>
-                        ${escapeHtmlEditor(instructions)}
-                    </div>`;
-            }
+            const parsed = parseExam(raw, loai);
+            if (!parsed.count) return alert('Web chưa nhận diện được câu hỏi.');
 
-            questions.forEach(q => {
-                htmlPreview += `
-                    <div class="preview-question">
-                        <div class="preview-question-text">
-                            <span class="preview-q-number">${q.number}</span>
-                            ${loai === 'dientu'
-                                ? escapeHtmlEditor(q.text).replace(/_{3,}/g,
-                                    '<span class="preview-inline">Nhập đáp án...</span>')
-                                : escapeHtmlEditor(q.text)}
-                        </div>`;
+            document.getElementById('studentPreviewTitle').textContent =
+                document.getElementById('tenDe').value.trim() || 'Xem như học sinh';
+            document.getElementById('studentPreviewBody').innerHTML =
+                renderTeacherStudentPreview(parsed, loai);
+            document.getElementById('modalXemNhuHocSinh').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        };
 
-                if (loai === 'tracnghiem') {
-                    if (q.options.length) {
-                        htmlPreview += '<div class="preview-options">';
-                        q.options.forEach(opt => {
-                            htmlPreview += `
-                                <div class="preview-option">
-                                    <strong>${escapeHtmlEditor(opt.letter)}.</strong>
-                                    ${escapeHtmlEditor(opt.text)}
-                                </div>`;
-                        });
-                        htmlPreview += '</div>';
+        function renderTeacherStudentPreview(parsed, loaiDe) {
+            let out = `<div class="student-preview-meta">${parsed.count} câu</div>`;
 
-                        if (q.correct) {
-                            htmlPreview += `
-                                <div class="preview-answer-note">
-                                    ✓ Đã nhận diện đáp án: <strong>${escapeHtmlEditor(q.correct)}</strong>
-                                    <span style="opacity:.7;">(chỉ giáo viên thấy trong preview)</span>
-                                </div>`;
-                        }
-                    } else {
-                        htmlPreview += `
-                            <div class="preview-warning" style="margin-top:10px;">
-                                ⚠️ Câu này chưa có đủ lựa chọn A/B/C/D.
-                            </div>`;
-                    }
-                } else if (!q.text.includes('___')) {
-                    htmlPreview += `
-                        <div class="preview-warning" style="margin-top:10px;">
-                            ⚠️ Câu này không có <strong>___</strong>, học sinh sẽ được tạo ô nhập ở cuối câu.
-                        </div>`;
+            parsed.sections.forEach(section => {
+                if (section.title) {
+                    out += `<div class="student-preview-section">
+                        <div class="student-preview-section-title">📌 ${escapeHtmlEditor(section.title)}</div>`;
                 }
 
-                htmlPreview += '</div>';
+                if (section.instructions.length) {
+                    out += `<div class="student-preview-instruction">${escapeHtmlEditor(section.instructions.join('\n'))}</div>`;
+                }
+
+                section.questions.forEach(q => {
+                    let qText = escapeHtmlEditor(q.text).replace(
+                        /_{3,}/g,
+                        '<input class="preview-student-input" placeholder="Nhập đáp án..." disabled>'
+                    );
+
+                    out += `<div class="student-preview-question">
+                        <div class="student-preview-qtext"><span class="preview-q-number">${q.number}</span>${qText}</div>`;
+
+                    if (loaiDe === 'tracnghiem' && q.options.length) {
+                        out += '<div class="student-preview-options">';
+                        q.options.forEach(opt => {
+                            out += `<div class="student-preview-option"><span>${escapeHtmlEditor(opt.letter)}</span>${escapeHtmlEditor(opt.text)}</div>`;
+                        });
+                        out += '</div>';
+                    } else if (loaiDe === 'dientu' && !q.text.includes('___')) {
+                        out += `<input class="preview-student-full-input" placeholder="Nhập đáp án..." disabled>`;
+                    }
+
+                    out += '</div>';
+                });
+
+                if (section.title) out += '</div>';
             });
 
-            content.innerHTML = htmlPreview;
-            preview.classList.add('show');
+            return out;
+        }
+
+        window.dongModalXemNhuHocSinh = () => {
+            document.getElementById('modalXemNhuHocSinh').classList.remove('show');
+            document.body.style.overflow = '';
         };
 
         window.themDeKiemTra = async () => {
@@ -741,45 +1015,40 @@
             const l = document.getElementById('loaiDe').value;
             const inputSoCau = document.getElementById('soLuongCau').value.trim();
 
-            if (!t || !raw) {
-                return alert("Vui lòng nhập tên đề và nội dung đề!");
-            }
+            if (!t || !raw) return alert("Vui lòng nhập tên đề và nội dung đề!");
 
-            const questions = parseDeEditor(raw, l);
+            const parsed = parseExam(raw, l);
+            const soCauThucTe = parsed.count;
 
-            if (!questions.length) {
+            if (!soCauThucTe) {
                 return alert("Web chưa nhận diện được câu hỏi. Hãy kiểm tra cú pháp rồi xem trước đề.");
             }
 
-            const soCau = inputSoCau ? parseInt(inputSoCau) : questions.length;
-
-            if (soCau !== questions.length) {
-                const tiepTuc = confirm(
-                    `Web nhận diện được ${questions.length} câu, nhưng bạn đang nhập số câu là ${soCau}.\\n\\n` +
-                    `Bạn có muốn phát hành với số câu ${soCau} không?`
+            if (inputSoCau && Number(inputSoCau) !== soCauThucTe) {
+                const ok = confirm(
+                    `Bạn nhập ${inputSoCau} câu nhưng parser nhận diện được ${soCauThucTe} câu.\\n\\n` +
+                    `Web sẽ không tự bỏ câu. Bạn có muốn tiếp tục phát hành không?`
                 );
-                if (!tiepTuc) return;
+                if (!ok) return;
             }
 
-            // Kiểm tra cơ bản trước khi lưu.
             if (l === 'tracnghiem') {
-                const loi = questions
+                const incomplete = parsed.questions
                     .filter(q => q.options.length && q.options.length < 4)
                     .map(q => q.number);
 
-                if (loi.length) {
-                    const tiepTuc = confirm(
-                        `Các câu ${loi.join(', ')} chưa có đủ 4 lựa chọn A/B/C/D.\\n\\n` +
-                        `Bạn vẫn muốn phát hành?`
+                if (incomplete.length) {
+                    const ok = confirm(
+                        `Các câu ${incomplete.join(', ')} chưa có đủ 4 lựa chọn A/B/C/D.\\n\\nBạn vẫn muốn phát hành?`
                     );
-                    if (!tiepTuc) return;
+                    if (!ok) return;
                 }
             }
 
             try {
                 await addDoc(collection(db, "danhsach_de"), {
                     tenDe: t,
-                    soLuongCau: soCau,
+                    soLuongCau: soCauThucTe,
                     noiDungDe: raw,
                     loaiDe: l,
                     thoiGianTao: Date.now()
@@ -789,24 +1058,13 @@
                 document.getElementById('soLuongCau').value = '';
                 document.getElementById('noiDungDe').value = '';
                 document.getElementById('khuVucXemTruoc').classList.remove('show');
-
-                alert(`Đã phát hành đề "${t}" gồm ${soCau} câu!`);
+                alert(`Đã phát hành đề "${t}" gồm ${soCauThucTe} câu!`);
             } catch (e) {
                 console.error(e);
                 alert("Không thể phát hành đề. Vui lòng kiểm tra kết nối.");
             }
         };
-        
-        onSnapshot(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")), (s) => { 
-            const t = document.getElementById('bangDanhSachDe'); t.innerHTML = ''; 
-            s.forEach(d => {
-                const loai = d.data().loaiDe === 'dientu' ? 'Điền từ' : 'Trắc nghiệm';
-                t.innerHTML += `<tr><td><strong>${d.data().tenDe}</strong></td><td>${loai}</td><td>${d.data().soLuongCau}</td><td>${new Date(d.data().thoiGianTao).toLocaleDateString()}</td><td><button class="btn-delete" onclick="xoaDe('${d.id}')">Xóa</button></td></tr>`; 
-            }); 
-        });
-        
-        window.xoaDe = async (id) => { if(confirm("Xóa đề này?")) await deleteDoc(doc(db, "danhsach_de", id)); };
-        
+
         // ===== Tiến độ học sinh =====
         const baiNopCache = new Map();
 
@@ -842,15 +1100,7 @@
                 btnXem.textContent = '👁 Xem bài';
                 btnXem.onclick = () => moBaiLam(d.id);
                 tdXem.appendChild(btnXem);
-
-                const tdAI = document.createElement('td');
-                const btnAI = document.createElement('button');
-                btnAI.className = 'btn-ai';
-                btnAI.textContent = 'Prompt AI';
-                btnAI.onclick = () => xuatChoGemini(dt.tenDe || '', c);
-                tdAI.appendChild(btnAI);
-
-                tr.append(tdTen, tdNgay, tdDapAn, tdXem, tdAI);
+                tr.append(tdTen, tdNgay, tdDapAn, tdXem);
                 t.appendChild(tr);
             });
         });
@@ -863,14 +1113,6 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
-
-        window.xuatChoGemini = (t, c) => {
-            navigator.clipboard.writeText(
-                `Đóng vai giáo viên tiếng Anh. Đề: [${t}]. Học sinh chọn: ${c}. Hãy chấm và giải thích.`
-            );
-            alert("Đã copy lệnh!");
-        };
-
         // ===== Parser dùng chung cho giao diện Xem bài =====
         function parseDeGV(rawText, soCau, loaiDe) {
             const text = (rawText || '').replace(/\r/g, '').trim();
@@ -953,6 +1195,7 @@
 
         let modalState = {
             questions: [],
+            parsed: { sections: [], questions: [], count: 0 },
             answers: {},
             current: 0,
             instructions: '',
@@ -1050,20 +1293,13 @@
                 const deGoc = { id: deSnap.id, ...deSnap.data() };
 
                 const noiDungGoc = deGoc.noiDungDe || '';
-                modalState.questions = parseDeGV(
+                const parsedSubmission = parseExam(
                     noiDungGoc,
-                    deGoc.soLuongCau,
                     deGoc.loaiDe || 'tracnghiem'
                 );
 
-                // Nếu đề khai báo nhiều câu nhưng parser chỉ nhận 1 câu,
-                // thử parser dòng-question với các dạng đánh số phổ biến.
-                if (Number(deGoc.soLuongCau) > 1 && modalState.questions.length === 1) {
-                    const fallbackResult = parseDeTheoDong(noiDungGoc, deGoc.loaiDe || 'tracnghiem');
-                    if (fallbackResult.questions.length > modalState.questions.length) {
-                        modalState.questions = fallbackResult.questions;
-                    }
-                }
+                modalState.parsed = parsedSubmission;
+                modalState.questions = parsedSubmission.questions;
                 modalState.answers = ketQua.dapAn || {};
                 modalState.instructions = layDeBaiGV(noiDungGoc);
                 modalState.current = 0;
@@ -1087,13 +1323,14 @@
 
         function renderModalBaiLam() {
             const questions = modalState.questions || [];
+            const parsed = modalState.parsed || { sections: [] };
             const grid = document.getElementById('modalQuestionGrid');
             grid.innerHTML = '';
 
             questions.forEach((q, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'submission-number' + (i === modalState.current ? ' active' : '');
-                btn.textContent = i + 1;
+                btn.textContent = q.number;
                 btn.onclick = () => {
                     modalState.current = i;
                     renderModalBaiLam();
@@ -1113,9 +1350,23 @@
             const answer = modalState.answers[q.number] ?? 'Chưa làm';
             const content = document.getElementById('modalQuestionContent');
 
-            let htmlQ = modalState.instructions
-                ? `<div class="exam-instruction"><span class="exam-instruction-title">📌 Đề bài</span>${escapeHtmlGV(modalState.instructions)}</div>`
-                : '';
+            // Find the section that owns this question.
+            const section = (parsed.sections || []).find(sec =>
+                sec.questions.some(item => item.number === q.number)
+            );
+
+            let htmlQ = '';
+
+            if (section?.title) {
+                htmlQ += `<div class="exam-section-card">
+                    <div class="exam-section-title">📌 ${escapeHtmlGV(section.title)}</div>
+                    ${section.instructions.length
+                        ? `<div class="exam-section-instruction">${escapeHtmlGV(section.instructions.join('\n'))}</div>`
+                        : ''}
+                </div>`;
+            } else if (section?.instructions?.length) {
+                htmlQ += `<div class="exam-instruction"><span class="exam-instruction-title">📌 Đề bài</span>${escapeHtmlGV(section.instructions.join('\n'))}</div>`;
+            }
 
             htmlQ += `
                 <div class="submission-question">
@@ -1131,8 +1382,7 @@
                     <div class="submission-answer-box">
                         <strong>✍️ Học sinh đã nhập:</strong>
                         <div class="submission-answer-text">${escapeHtmlGV(answer)}</div>
-                    </div>
-                `;
+                    </div>`;
             } else if (q.options && q.options.length) {
                 q.options.forEach(opt => {
                     const selected = String(answer).toUpperCase() === opt.letter;
@@ -1141,27 +1391,21 @@
                             <span class="submission-option-letter">${escapeHtmlGV(opt.letter)}</span>
                             <span>${escapeHtmlGV(opt.text)}</span>
                             ${selected ? '<span class="selected-tag">✓ HỌC SINH CHỌN</span>' : ''}
-                        </div>
-                    `;
+                        </div>`;
                 });
             } else {
                 htmlQ += `
                     <div class="submission-answer-box">
                         <strong>📝 Học sinh đã chọn:</strong>
                         <div class="submission-answer-text">${escapeHtmlGV(answer)}</div>
-                    </div>
-                `;
+                    </div>`;
             }
 
             htmlQ += `</div>`;
             content.innerHTML = htmlQ;
 
             document.getElementById('modalQuestionCounter').textContent =
-                `Câu ${modalState.current + 1} / ${questions.length}`;
-
-            document.querySelectorAll('.submission-number').forEach((btn, i) => {
-                btn.classList.toggle('active', i === modalState.current);
-            });
+                `Câu ${q.number} · ${modalState.current + 1} / ${questions.length}`;
         }
 
         window.modalChuyenCau = (step) => {
