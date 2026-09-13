@@ -6,7 +6,7 @@
     <title>Workspace - Giáo Viên</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #4F46E5; --primary-hover: #4338CA; --bg: #F9FAFB; --surface: #FFFFFF; --text-main: #111827; --text-sub: #6B7280; --border: #E5E7EB; --danger: #EF4444; }
+        :root { --primary: #4F46E5; --primary-hover: #4338CA; --primary-soft: #EEF2FF; --bg: #F9FAFB; --surface: #FFFFFF; --text-main: #111827; --text-sub: #6B7280; --border: #E5E7EB; --danger: #EF4444; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 30px 20px; line-height: 1.5; }
         .container { max-width: 1000px; margin: auto; }
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
@@ -30,6 +30,338 @@
         th, td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
         th { background: #F9FAFB; font-weight: 600; color: var(--text-sub); }
         .btn-ai { background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+
+        /* ===== Trình soạn & xem trước đề ===== */
+        .exam-editor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .editor-hint {
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-preview {
+            background: #EEF2FF;
+            color: #4338CA;
+            border: 1px solid #C7D2FE;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-preview:hover { background: #E0E7FF; }
+
+        .exam-preview {
+            display: none;
+            margin-top: 22px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #F8FAFC;
+            padding: 18px;
+        }
+
+        .exam-preview.show { display: block; }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .preview-header h4 { margin: 0; font-size: 16px; }
+
+        .preview-badge {
+            padding: 6px 10px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 12px;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        .preview-question {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+        }
+
+        .preview-question-text {
+            line-height: 1.7;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+
+        .preview-q-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+            padding: 0 7px;
+            margin-right: 7px;
+            border-radius: 8px;
+            background: #EEF2FF;
+            color: #4F46E5;
+            font-weight: 700;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .preview-options {
+            display: grid;
+            gap: 7px;
+            margin-top: 12px;
+        }
+
+        .preview-option {
+            padding: 9px 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .preview-answer-note {
+            margin-top: 10px;
+            color: var(--text-sub);
+            font-size: 12px;
+        }
+
+        .preview-inline {
+            display: inline-block;
+            min-width: 130px;
+            padding: 3px 8px;
+            border: none;
+            border-bottom: 2px solid #98A2B3;
+            background: #F8FAFC;
+            border-radius: 5px 5px 0 0;
+            color: #4F46E5;
+            font-weight: 600;
+            vertical-align: baseline;
+        }
+
+        .preview-warning {
+            padding: 11px 13px;
+            margin-bottom: 12px;
+            background: #FFFAEB;
+            color: #B54708;
+            border: 1px solid #FEDF89;
+            border-radius: 9px;
+            font-size: 13px;
+        }
+
+        .format-help {
+            margin-top: 15px;
+            padding: 14px 16px;
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .format-help code {
+            background: #EEF2FF;
+            color: #4338CA;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        /* ===== Modal xem bài học sinh ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(15, 23, 42, .55);
+            backdrop-filter: blur(4px);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-overlay.show { display: flex; align-items: center; justify-content: center; }
+
+        .submission-modal {
+            width: min(1050px, 100%);
+            max-height: 92vh;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 25px 70px rgba(0,0,0,.20);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .submission-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .submission-title { margin: 0 0 5px; font-size: 21px; color: var(--text-main); }
+        .submission-meta { color: var(--text-sub); font-size: 13px; }
+
+        .modal-close {
+            width: 36px; height: 36px; border-radius: 9px;
+            border: 1px solid var(--border); background: white;
+            cursor: pointer; font-size: 20px; color: var(--text-sub);
+        }
+        .modal-close:hover { background: #F3F4F6; }
+
+        .submission-body {
+            display: grid;
+            grid-template-columns: 220px minmax(0,1fr);
+            min-height: 0;
+            flex: 1;
+        }
+
+        .submission-nav {
+            padding: 20px;
+            background: #F8FAFC;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .submission-nav h4 { margin: 0 0 14px; font-size: 14px; }
+        .submission-number-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 7px;
+        }
+        .submission-number {
+            height: 34px; border: 1px solid var(--border);
+            background: white; border-radius: 8px; cursor: pointer;
+            font-weight: 600; color: var(--text-sub);
+        }
+        .submission-number.active {
+            background: var(--primary); color: white; border-color: var(--primary);
+        }
+        .submission-nav-note {
+            margin-top: 16px; padding-top: 14px;
+            border-top: 1px solid var(--border);
+            color: var(--text-sub); font-size: 12px; line-height: 1.6;
+        }
+
+        .submission-content {
+            padding: 22px;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .submission-question {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            background: white;
+        }
+
+        .submission-question-top {
+            display: flex; justify-content: space-between;
+            gap: 12px; align-items: center; margin-bottom: 15px;
+        }
+        .submission-q-number {
+            font-weight: 700; color: var(--primary); font-size: 14px;
+        }
+        .student-answer-label {
+            color: var(--text-sub); font-size: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .03em;
+        }
+
+        .submission-q-text {
+            font-size: 16px; line-height: 1.75;
+            white-space: pre-wrap; margin-bottom: 16px;
+        }
+
+        .submission-option {
+            display: flex; align-items: center; gap: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 14px;
+            margin-top: 8px; background: #fff;
+        }
+        .submission-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-soft, #EEF2FF);
+        }
+        .submission-option-letter {
+            width: 30px; height: 30px; border-radius: 8px;
+            display: grid; place-items: center;
+            border: 1px solid var(--border);
+            font-weight: 700; color: var(--text-sub);
+            flex: 0 0 auto;
+        }
+        .submission-option.selected .submission-option-letter {
+            background: var(--primary); color: white; border-color: var(--primary);
+        }
+        .selected-tag {
+            margin-left: auto; font-size: 12px; font-weight: 700;
+            color: var(--primary); white-space: nowrap;
+        }
+
+        .submission-answer-box {
+            margin-top: 15px; padding: 14px 16px;
+            border-radius: 10px; background: #F8FAFC;
+            border: 1px solid var(--border);
+        }
+        .submission-answer-box strong { display: block; margin-bottom: 5px; font-size: 13px; }
+        .submission-answer-text { font-size: 16px; white-space: pre-wrap; }
+
+        .submission-footer {
+            padding: 14px 22px;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 12px;
+            background: #fff;
+        }
+        .submission-footer-center { color: var(--text-sub); font-size: 13px; }
+        .modal-nav-btn {
+            border: 1px solid var(--border); background: white;
+            padding: 9px 14px; border-radius: 8px;
+            font-weight: 600; cursor: pointer;
+        }
+        .modal-nav-btn:hover { background: #F3F4F6; }
+        .modal-nav-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .btn-view-submission {
+            background: #4F46E5; color: white; border: none;
+            padding: 8px 15px; border-radius: 6px;
+            cursor: pointer; font-size: 13px; font-weight: 600;
+            margin-right: 6px;
+        }
+        .btn-view-submission:hover { background: #4338CA; }
+
+        @media (max-width: 700px) {
+            .modal-overlay { padding: 8px; }
+            .submission-modal { max-height: 96vh; border-radius: 14px; }
+            .submission-body { grid-template-columns: 1fr; }
+            .submission-nav {
+                border-right: none; border-bottom: 1px solid var(--border);
+                padding: 12px 16px;
+            }
+            .submission-number-grid { grid-template-columns: repeat(10, 1fr); }
+            .submission-nav-note { display: none; }
+            .submission-content { padding: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -55,25 +387,66 @@
 
             <div id="tiendo" class="section">
                 <div style="overflow-x: auto;">
-                    <table><thead><tr><th>Tên Đề</th><th>Ngày nộp</th><th>Đáp án</th><th>Chấm bằng AI</th></tr></thead><tbody id="bangTienDo"></tbody></table>
+                    <table><thead><tr><th>Tên Đề</th><th>Ngày nộp</th><th>Đáp án</th><th>Xem bài</th><th>Chấm bằng AI</th></tr></thead><tbody id="bangTienDo"></tbody></table>
                 </div>
             </div>
 
             <div id="kiemtra" class="section">
                 <h3>Phát hành đề mới</h3>
+
                 <div class="input-group">
                     <input type="text" id="tenDe" placeholder="Tên đề..." style="flex: 2;">
-                    <select id="loaiDe" style="flex: 1;">
-                        <option value="tracnghiem">Trắc nghiệm (A,B,C,D)</option>
+                    <select id="loaiDe" style="flex: 1;" onchange="capNhatGoiYNhapDe()">
+                        <option value="tracnghiem">Trắc nghiệm (A, B, C, D)</option>
                         <option value="dientu">Điền từ / Tự luận</option>
                     </select>
-                    <input type="number" id="soLuongCau" placeholder="Số câu" style="flex: 1;">
+                    <input type="number" id="soLuongCau" placeholder="Số câu (tự đếm nếu để trống)" style="flex: 1;" min="1">
                 </div>
-                <textarea id="noiDungDe" placeholder="Nội dung đề..."></textarea>
-                <button class="btn-main" style="margin-top: 15px;" onclick="themDeKiemTra()">Phát Hành Đề Ngay</button>
+
+                <textarea id="noiDungDe" placeholder="Dán đề từ ChatGPT/Gemini vào đây..."></textarea>
+
+                <div class="exam-editor-toolbar">
+                    <div id="editorHint" class="editor-hint">
+                        💡 Trắc nghiệm: mỗi câu gồm câu hỏi + A/B/C/D + <strong>ANSWER: A</strong>.
+                    </div>
+                    <div class="editor-actions">
+                        <button class="btn-preview" onclick="xemTruocDe()">👁 Xem trước đề</button>
+                        <button class="btn-main" onclick="themDeKiemTra()">🚀 Phát hành đề</button>
+                    </div>
+                </div>
+
+                <div class="format-help">
+                    <strong>📌 Cú pháp đơn giản</strong><br>
+                    <span id="formatHelpContent">
+                        Trắc nghiệm:<br>
+                        <code>1. She ___ to school every day.</code><br>
+                        <code>A. go</code> &nbsp; <code>B. goes</code> &nbsp; <code>C. going</code> &nbsp; <code>D. gone</code><br>
+                        <code>ANSWER: B</code>
+                    </span>
+                </div>
+
+                <div id="khuVucXemTruoc" class="exam-preview">
+                    <div class="preview-header">
+                        <h4>👁 Xem trước đề</h4>
+                        <span id="previewBadge" class="preview-badge">0 câu</span>
+                    </div>
+                    <div id="noiDungXemTruoc"></div>
+                </div>
+
                 <h3 style="margin-top: 40px;">Kho đề đã giao</h3>
                 <div style="overflow-x: auto;">
-                    <table><thead><tr><th>Tên Đề</th><th>Loại</th><th>Số câu</th><th>Ngày tạo</th><th>Hành động</th></tr></thead><tbody id="bangDanhSachDe"></tbody></table>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tên Đề</th>
+                                <th>Loại</th>
+                                <th>Số câu</th>
+                                <th>Ngày tạo</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bangDanhSachDe"></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -90,6 +463,41 @@
                         <tbody id="bangTuVung"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal xem bài học sinh -->
+    <div id="modalBaiLam" class="modal-overlay" onclick="dongModalNeuClickNen(event)">
+        <div class="submission-modal" role="dialog" aria-modal="true" aria-labelledby="modalSubmissionTitle">
+            <div class="submission-header">
+                <div>
+                    <h3 id="modalSubmissionTitle" class="submission-title">Chi tiết bài làm</h3>
+                    <div id="modalSubmissionMeta" class="submission-meta"></div>
+                </div>
+                <button class="modal-close" onclick="dongModalBaiLam()" aria-label="Đóng">×</button>
+            </div>
+
+            <div class="submission-body">
+                <aside class="submission-nav">
+                    <h4>Danh sách câu hỏi</h4>
+                    <div id="modalQuestionGrid" class="submission-number-grid"></div>
+                    <div class="submission-nav-note">
+                        Đây là bài làm nguyên trạng của học sinh.<br>
+                        Web chỉ hiển thị <strong>đáp án học sinh đã chọn/nhập</strong>, không tự đánh giá đúng sai.
+                    </div>
+                </aside>
+
+                <main class="submission-content">
+                    <div id="modalQuestionContent"></div>
+                </main>
+            </div>
+
+            <div class="submission-footer">
+                <button class="modal-nav-btn" onclick="modalChuyenCau(-1)">← Câu trước</button>
+                <div id="modalQuestionCounter" class="submission-footer-center">Câu 1 / 1</div>
+                <button class="modal-nav-btn primary" onclick="modalChuyenCau(1)">Câu tiếp →</button>
             </div>
         </div>
     </div>
@@ -111,9 +519,240 @@
         onSnapshot(query(collection(db, "diemdanh"), orderBy("ngay", "desc")), (s) => { const t = document.getElementById('bangDiemDanh'); t.innerHTML = '<tr><th>Ngày học</th><th>Trạng thái</th><th>Nhận xét</th></tr>'; s.forEach(d => t.innerHTML += `<tr><td>${new Date(d.data().ngay).toLocaleDateString()}</td><td>${d.data().trangThai}</td><td>${d.data().nhanXet}</td></tr>`); });
         window.xuatWord = () => { const b = document.getElementById('bangDiemDanh').innerHTML, l = document.createElement('a'); l.href = URL.createObjectURL(new Blob(['\ufeff<html xmlns:w="urn:schemas-microsoft-com:office:word"><body><h2 align="center">BÁO CÁO</h2><table border="1" style="border-collapse:collapse;width:100%">' + b + '</table></body></html>'], {type:'application/msword'})); l.download='Bao_Cao.doc'; l.click(); };
         
-        window.themDeKiemTra = async () => { 
-            const t = document.getElementById('tenDe').value, s = document.getElementById('soLuongCau').value, n = document.getElementById('noiDungDe').value, l = document.getElementById('loaiDe').value; 
-            if(t&&s) { await addDoc(collection(db, "danhsach_de"), { tenDe: t, soLuongCau: parseInt(s), noiDungDe: n, loaiDe: l, thoiGianTao: Date.now() }); document.getElementById('tenDe').value = ''; document.getElementById('soLuongCau').value = ''; document.getElementById('noiDungDe').value = ''; alert("Đã phát hành!");} 
+        // ===== Soạn đề: parser dùng chung với giao diện học sinh =====
+        function parseDeEditor(rawText, loaiDe) {
+            const text = (rawText || '').replace(/\r/g, '').trim();
+            if (!text) return [];
+
+            const lines = text.split('\n').map(x => x.trim()).filter(Boolean);
+            const questions = [];
+            let current = null;
+
+            const push = () => {
+                if (current && current.text.trim()) {
+                    if (current.options) current.options = current.options.filter(Boolean);
+                    questions.push(current);
+                }
+            };
+
+            for (const line of lines) {
+                const qMatch = line.match(/^(?:Câu\s*)?(\d+)[.)]\s*(.*)$/i);
+
+                if (qMatch) {
+                    push();
+                    current = {
+                        number: Number(qMatch[1]),
+                        text: qMatch[2],
+                        options: [],
+                        correct: ''
+                    };
+                    continue;
+                }
+
+                if (!current) continue;
+
+                if (loaiDe === 'tracnghiem') {
+                    const optionMatch = line.match(/^([ABCD])[.)]\s*(.*)$/i);
+                    if (optionMatch) {
+                        current.options.push({
+                            letter: optionMatch[1].toUpperCase(),
+                            text: optionMatch[2]
+                        });
+                        continue;
+                    }
+
+                    const answerMatch = line.match(/^(?:Đáp án|Đ\/A|Answer|ANSWER)\s*:\s*([ABCD])/i);
+                    if (answerMatch) {
+                        current.correct = answerMatch[1].toUpperCase();
+                        continue;
+                    }
+                }
+
+                current.text += '\n' + line;
+            }
+
+            push();
+            return questions;
+        }
+
+        function escapeHtmlEditor(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function demSoCauTuNoiDung(rawText, loaiDe) {
+            return parseDeEditor(rawText, loaiDe).length;
+        }
+
+        window.capNhatGoiYNhapDe = () => {
+            const loai = document.getElementById('loaiDe').value;
+            const hint = document.getElementById('editorHint');
+            const help = document.getElementById('formatHelpContent');
+
+            if (loai === 'dientu') {
+                hint.innerHTML =
+                    '💡 Điền từ/tự luận: dùng <strong>___</strong> tại vị trí học sinh cần nhập đáp án.';
+                help.innerHTML = `
+                    Điền từ:<br>
+                    <code>1. I ___ to school every day.</code><br>
+                    <code>2. My favorite food is ___.</code><br>
+                    Học sinh sẽ thấy ô nhập ngay tại vị trí <code>___</code>.
+                `;
+            } else {
+                hint.innerHTML =
+                    '💡 Trắc nghiệm: mỗi câu gồm câu hỏi + A/B/C/D + <strong>ANSWER: A</strong>.';
+                help.innerHTML = `
+                    Trắc nghiệm:<br>
+                    <code>1. She ___ to school every day.</code><br>
+                    <code>A. go</code> &nbsp; <code>B. goes</code> &nbsp; <code>C. going</code> &nbsp; <code>D. gone</code><br>
+                    <code>ANSWER: B</code>
+                `;
+            }
+        };
+
+        window.xemTruocDe = () => {
+            const raw = document.getElementById('noiDungDe').value.trim();
+            const loai = document.getElementById('loaiDe').value;
+            const preview = document.getElementById('khuVucXemTruoc');
+            const content = document.getElementById('noiDungXemTruoc');
+            const badge = document.getElementById('previewBadge');
+
+            if (!raw) {
+                preview.classList.remove('show');
+                return alert('Hãy nhập hoặc dán nội dung đề trước.');
+            }
+
+            const questions = parseDeEditor(raw, loai);
+
+            if (!questions.length) {
+                preview.classList.add('show');
+                badge.textContent = '0 câu';
+                content.innerHTML = `
+                    <div class="preview-warning">
+                        ⚠️ Web chưa nhận diện được câu hỏi. Hãy đảm bảo mỗi câu bắt đầu bằng
+                        <strong>1.</strong>, <strong>2.</strong>, <strong>3.</strong>...
+                    </div>`;
+                return;
+            }
+
+            badge.textContent = `${questions.length} câu`;
+
+            let htmlPreview = '';
+
+            questions.forEach(q => {
+                htmlPreview += `
+                    <div class="preview-question">
+                        <div class="preview-question-text">
+                            <span class="preview-q-number">${q.number}</span>
+                            ${loai === 'dientu'
+                                ? escapeHtmlEditor(q.text).replace(/_{3,}/g,
+                                    '<span class="preview-inline">Nhập đáp án...</span>')
+                                : escapeHtmlEditor(q.text)}
+                        </div>`;
+
+                if (loai === 'tracnghiem') {
+                    if (q.options.length) {
+                        htmlPreview += '<div class="preview-options">';
+                        q.options.forEach(opt => {
+                            htmlPreview += `
+                                <div class="preview-option">
+                                    <strong>${escapeHtmlEditor(opt.letter)}.</strong>
+                                    ${escapeHtmlEditor(opt.text)}
+                                </div>`;
+                        });
+                        htmlPreview += '</div>';
+
+                        if (q.correct) {
+                            htmlPreview += `
+                                <div class="preview-answer-note">
+                                    ✓ Đã nhận diện đáp án: <strong>${escapeHtmlEditor(q.correct)}</strong>
+                                    <span style="opacity:.7;">(chỉ giáo viên thấy trong preview)</span>
+                                </div>`;
+                        }
+                    } else {
+                        htmlPreview += `
+                            <div class="preview-warning" style="margin-top:10px;">
+                                ⚠️ Câu này chưa có đủ lựa chọn A/B/C/D.
+                            </div>`;
+                    }
+                } else if (!q.text.includes('___')) {
+                    htmlPreview += `
+                        <div class="preview-warning" style="margin-top:10px;">
+                            ⚠️ Câu này không có <strong>___</strong>, học sinh sẽ được tạo ô nhập ở cuối câu.
+                        </div>`;
+                }
+
+                htmlPreview += '</div>';
+            });
+
+            content.innerHTML = htmlPreview;
+            preview.classList.add('show');
+        };
+
+        window.themDeKiemTra = async () => {
+            const t = document.getElementById('tenDe').value.trim();
+            const raw = document.getElementById('noiDungDe').value.trim();
+            const l = document.getElementById('loaiDe').value;
+            const inputSoCau = document.getElementById('soLuongCau').value.trim();
+
+            if (!t || !raw) {
+                return alert("Vui lòng nhập tên đề và nội dung đề!");
+            }
+
+            const questions = parseDeEditor(raw, l);
+
+            if (!questions.length) {
+                return alert("Web chưa nhận diện được câu hỏi. Hãy kiểm tra cú pháp rồi xem trước đề.");
+            }
+
+            const soCau = inputSoCau ? parseInt(inputSoCau) : questions.length;
+
+            if (soCau !== questions.length) {
+                const tiepTuc = confirm(
+                    `Web nhận diện được ${questions.length} câu, nhưng bạn đang nhập số câu là ${soCau}.\\n\\n` +
+                    `Bạn có muốn phát hành với số câu ${soCau} không?`
+                );
+                if (!tiepTuc) return;
+            }
+
+            // Kiểm tra cơ bản trước khi lưu.
+            if (l === 'tracnghiem') {
+                const loi = questions
+                    .filter(q => q.options.length && q.options.length < 4)
+                    .map(q => q.number);
+
+                if (loi.length) {
+                    const tiepTuc = confirm(
+                        `Các câu ${loi.join(', ')} chưa có đủ 4 lựa chọn A/B/C/D.\\n\\n` +
+                        `Bạn vẫn muốn phát hành?`
+                    );
+                    if (!tiepTuc) return;
+                }
+            }
+
+            try {
+                await addDoc(collection(db, "danhsach_de"), {
+                    tenDe: t,
+                    soLuongCau: soCau,
+                    noiDungDe: raw,
+                    loaiDe: l,
+                    thoiGianTao: Date.now()
+                });
+
+                document.getElementById('tenDe').value = '';
+                document.getElementById('soLuongCau').value = '';
+                document.getElementById('noiDungDe').value = '';
+                document.getElementById('khuVucXemTruoc').classList.remove('show');
+
+                alert(`Đã phát hành đề "${t}" gồm ${soCau} câu!`);
+            } catch (e) {
+                console.error(e);
+                alert("Không thể phát hành đề. Vui lòng kiểm tra kết nối.");
+            }
         };
         
         onSnapshot(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")), (s) => { 
@@ -126,8 +765,285 @@
         
         window.xoaDe = async (id) => { if(confirm("Xóa đề này?")) await deleteDoc(doc(db, "danhsach_de", id)); };
         
-        onSnapshot(query(collection(db, "ketqua_hocsinh"), orderBy("thoiGianNop", "desc")), (s) => { const t = document.getElementById('bangTienDo'); t.innerHTML = ''; s.forEach(d => { const dt = d.data(), c = Object.entries(dt.dapAn).map(([x, y]) => `${x}:${y}`).join(', '); t.innerHTML += `<tr><td><strong>${dt.tenDe}</strong></td><td>${new Date(dt.thoiGianNop).toLocaleString()}</td><td>${c}</td><td><button class="btn-ai" onclick="xuatChoGemini('${dt.tenDe}', '${c}')">Prompt AI</button></td></tr>`; }); });
-        window.xuatChoGemini = (t, c) => { navigator.clipboard.writeText(`Đóng vai giáo viên tiếng Anh. Đề: [${t}]. Học sinh chọn: ${c}. Hãy chấm và giải thích.`); alert("Đã copy lệnh!"); };
+        // ===== Tiến độ học sinh =====
+        const baiNopCache = new Map();
+
+        onSnapshot(query(collection(db, "ketqua_hocsinh"), orderBy("thoiGianNop", "desc")), (s) => {
+            const t = document.getElementById('bangTienDo');
+            t.innerHTML = '';
+            baiNopCache.clear();
+
+            s.forEach(d => {
+                const dt = d.data();
+                baiNopCache.set(d.id, dt);
+
+                const c = Object.entries(dt.dapAn || {})
+                    .map(([x, y]) => `${x}:${y}`)
+                    .join(', ');
+
+                const tr = document.createElement('tr');
+
+                const tdTen = document.createElement('td');
+                tdTen.innerHTML = `<strong>${escapeHtmlGV(dt.tenDe || 'Không tên')}</strong>`;
+
+                const tdNgay = document.createElement('td');
+                tdNgay.textContent = dt.thoiGianNop
+                    ? new Date(dt.thoiGianNop).toLocaleString()
+                    : '';
+
+                const tdDapAn = document.createElement('td');
+                tdDapAn.textContent = c;
+
+                const tdXem = document.createElement('td');
+                const btnXem = document.createElement('button');
+                btnXem.className = 'btn-view-submission';
+                btnXem.textContent = '👁 Xem bài';
+                btnXem.onclick = () => moBaiLam(d.id);
+                tdXem.appendChild(btnXem);
+
+                const tdAI = document.createElement('td');
+                const btnAI = document.createElement('button');
+                btnAI.className = 'btn-ai';
+                btnAI.textContent = 'Prompt AI';
+                btnAI.onclick = () => xuatChoGemini(dt.tenDe || '', c);
+                tdAI.appendChild(btnAI);
+
+                tr.append(tdTen, tdNgay, tdDapAn, tdXem, tdAI);
+                t.appendChild(tr);
+            });
+        });
+
+        function escapeHtmlGV(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.xuatChoGemini = (t, c) => {
+            navigator.clipboard.writeText(
+                `Đóng vai giáo viên tiếng Anh. Đề: [${t}]. Học sinh chọn: ${c}. Hãy chấm và giải thích.`
+            );
+            alert("Đã copy lệnh!");
+        };
+
+        // ===== Parser dùng chung cho giao diện Xem bài =====
+        function parseDeGV(rawText, soCau, loaiDe) {
+            const text = (rawText || '').replace(/\r/g, '').trim();
+            if (!text) return [];
+
+            const lines = text.split('\n').map(x => x.trim()).filter(Boolean);
+            const questions = [];
+            let current = null;
+
+            const push = () => {
+                if (current && current.text) {
+                    if (current.options) current.options = current.options.filter(Boolean);
+                    questions.push(current);
+                }
+            };
+
+            for (const line of lines) {
+                const qMatch = line.match(/^(?:Câu\s*)?(\d+)[.)]\s*(.*)$/i);
+
+                if (qMatch) {
+                    push();
+                    current = {
+                        number: Number(qMatch[1]),
+                        text: qMatch[2],
+                        options: [],
+                        correct: ''
+                    };
+                    continue;
+                }
+
+                if (!current) continue;
+
+                if (loaiDe !== 'dientu') {
+                    const optMatch = line.match(/^([ABCD])[.)]\s*(.*)$/i);
+                    if (optMatch) {
+                        current.options.push({
+                            letter: optMatch[1].toUpperCase(),
+                            text: optMatch[2]
+                        });
+                        continue;
+                    }
+
+                    const answerMatch = line.match(/^(?:Đáp án|Đ\/A|Answer|ANSWER)\s*:\s*([ABCD])/i);
+                    if (answerMatch) {
+                        current.correct = answerMatch[1].toUpperCase();
+                        continue;
+                    }
+                }
+
+                current.text += '\n' + line;
+            }
+
+            push();
+
+            if (!questions.length && soCau) {
+                for (let i = 1; i <= Number(soCau); i++) {
+                    questions.push({
+                        number: i,
+                        text: `Câu ${i}`,
+                        options: [],
+                        correct: ''
+                    });
+                }
+            }
+
+            return questions.slice(0, Number(soCau) || questions.length);
+        }
+
+        let modalState = {
+            questions: [],
+            answers: {},
+            current: 0,
+            loaiDe: 'tracnghiem',
+            tenDe: ''
+        };
+
+        window.moBaiLam = async (submissionId) => {
+            const ketQua = baiNopCache.get(submissionId);
+            if (!ketQua) return alert('Không tìm thấy bài làm.');
+
+            try {
+                // Lấy đề gốc để ghép câu hỏi với đáp án học sinh.
+                const snap = await getDocs(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")));
+                let deGoc = null;
+
+                snap.forEach(d => {
+                    if (d.id === ketQua.idDe) deGoc = { id: d.id, ...d.data() };
+                });
+
+                if (!deGoc) {
+                    alert('Không tìm thấy đề gốc. Bài làm vẫn có thể xem đáp án ở bảng Tiến độ.');
+                    return;
+                }
+
+                modalState.questions = parseDeGV(
+                    deGoc.noiDungDe || '',
+                    deGoc.soLuongCau,
+                    deGoc.loaiDe || 'tracnghiem'
+                );
+                modalState.answers = ketQua.dapAn || {};
+                modalState.current = 0;
+                modalState.loaiDe = deGoc.loaiDe || 'tracnghiem';
+                modalState.tenDe = ketQua.tenDe || deGoc.tenDe || 'Bài tập';
+
+                document.getElementById('modalSubmissionTitle').textContent =
+                    `Chi tiết bài làm: ${modalState.tenDe}`;
+
+                document.getElementById('modalSubmissionMeta').textContent =
+                    `Ngày nộp: ${ketQua.thoiGianNop ? new Date(ketQua.thoiGianNop).toLocaleString() : '—'}`;
+
+                renderModalBaiLam();
+                document.getElementById('modalBaiLam').classList.add('show');
+                document.body.style.overflow = 'hidden';
+            } catch (e) {
+                console.error(e);
+                alert('Không thể tải chi tiết bài làm.');
+            }
+        };
+
+        function renderModalBaiLam() {
+            const questions = modalState.questions || [];
+            const grid = document.getElementById('modalQuestionGrid');
+            grid.innerHTML = '';
+
+            questions.forEach((q, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'submission-number' + (i === modalState.current ? ' active' : '');
+                btn.textContent = i + 1;
+                btn.onclick = () => {
+                    modalState.current = i;
+                    renderModalBaiLam();
+                };
+                grid.appendChild(btn);
+            });
+
+            const q = questions[modalState.current];
+
+            if (!q) {
+                document.getElementById('modalQuestionContent').innerHTML =
+                    '<div class="submission-question">Không đọc được nội dung đề.</div>';
+                document.getElementById('modalQuestionCounter').textContent = '0 / 0';
+                return;
+            }
+
+            const answer = modalState.answers[q.number] ?? 'Chưa làm';
+            const content = document.getElementById('modalQuestionContent');
+
+            let htmlQ = `
+                <div class="submission-question">
+                    <div class="submission-question-top">
+                        <div class="submission-q-number">CÂU ${q.number}</div>
+                        <div class="student-answer-label">Đáp án học sinh</div>
+                    </div>
+                    <div class="submission-q-text">${escapeHtmlGV(q.text)}</div>
+            `;
+
+            if (modalState.loaiDe === 'dientu') {
+                htmlQ += `
+                    <div class="submission-answer-box">
+                        <strong>✍️ Học sinh đã nhập:</strong>
+                        <div class="submission-answer-text">${escapeHtmlGV(answer)}</div>
+                    </div>
+                `;
+            } else if (q.options && q.options.length) {
+                q.options.forEach(opt => {
+                    const selected = String(answer).toUpperCase() === opt.letter;
+                    htmlQ += `
+                        <div class="submission-option ${selected ? 'selected' : ''}">
+                            <span class="submission-option-letter">${escapeHtmlGV(opt.letter)}</span>
+                            <span>${escapeHtmlGV(opt.text)}</span>
+                            ${selected ? '<span class="selected-tag">✓ HỌC SINH CHỌN</span>' : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                htmlQ += `
+                    <div class="submission-answer-box">
+                        <strong>📝 Học sinh đã chọn:</strong>
+                        <div class="submission-answer-text">${escapeHtmlGV(answer)}</div>
+                    </div>
+                `;
+            }
+
+            htmlQ += `</div>`;
+            content.innerHTML = htmlQ;
+
+            document.getElementById('modalQuestionCounter').textContent =
+                `Câu ${modalState.current + 1} / ${questions.length}`;
+
+            document.querySelectorAll('.submission-number').forEach((btn, i) => {
+                btn.classList.toggle('active', i === modalState.current);
+            });
+        }
+
+        window.modalChuyenCau = (step) => {
+            const total = modalState.questions.length;
+            if (!total) return;
+            modalState.current += step;
+            if (modalState.current < 0) modalState.current = 0;
+            if (modalState.current >= total) modalState.current = total - 1;
+            renderModalBaiLam();
+        };
+
+        window.dongModalBaiLam = () => {
+            document.getElementById('modalBaiLam').classList.remove('show');
+            document.body.style.overflow = '';
+        };
+
+        window.dongModalNeuClickNen = (event) => {
+            if (event.target.id === 'modalBaiLam') dongModalBaiLam();
+        };
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') dongModalBaiLam();
+        });
 
         window.themTuNhanh = async () => {
             const tenBo = document.getElementById('tenBoTu').value.trim();
