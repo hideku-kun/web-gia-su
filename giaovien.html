@@ -1065,6 +1065,58 @@
             }
         };
 
+
+        // ===== Kho đề đã giao =====
+        // Chỉ đọc dữ liệu hiện có từ Firestore để hiển thị.
+        // Không tạo lại / không xóa / không thay đổi các đề cũ.
+        onSnapshot(query(collection(db, "danhsach_de"), orderBy("thoiGianTao", "desc")), (snapshot) => {
+            const table = document.getElementById('bangDanhSachDe');
+            if (!table) return;
+
+            table.innerHTML = '';
+
+            snapshot.forEach(d => {
+                const data = d.data();
+                const loai = data.loaiDe === 'dientu' ? 'Điền từ / Tự luận' : 'Trắc nghiệm';
+
+                const tr = document.createElement('tr');
+
+                const tdTen = document.createElement('td');
+                tdTen.innerHTML = `<strong>${escapeHtmlGV(data.tenDe || 'Không tên')}</strong>`;
+
+                const tdLoai = document.createElement('td');
+                tdLoai.textContent = loai;
+
+                const tdSoCau = document.createElement('td');
+                tdSoCau.textContent = data.soLuongCau ?? '';
+
+                const tdNgay = document.createElement('td');
+                tdNgay.textContent = data.thoiGianTao
+                    ? new Date(data.thoiGianTao).toLocaleString()
+                    : '';
+
+                const tdAction = document.createElement('td');
+                const btn = document.createElement('button');
+                btn.className = 'btn-delete';
+                btn.textContent = 'Xóa';
+                btn.onclick = () => xoaDe(d.id);
+                tdAction.appendChild(btn);
+
+                tr.append(tdTen, tdLoai, tdSoCau, tdNgay, tdAction);
+                table.appendChild(tr);
+            });
+        });
+
+        window.xoaDe = async (id) => {
+            if (!confirm("Xóa đề này?")) return;
+            try {
+                await deleteDoc(doc(db, "danhsach_de", id));
+            } catch (e) {
+                console.error(e);
+                alert("Không thể xóa đề.");
+            }
+        };
+
         // ===== Tiến độ học sinh =====
         const baiNopCache = new Map();
 
